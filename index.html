@@ -61,7 +61,7 @@
       </div>
       <label class="file-button icon-button" title="動画ファイルを選択して追加" aria-label="動画ファイルを選択して追加">
         ＋
-        <input id="fileInput" type="file" accept="video/*" multiple />
+        <input id="fileInput" type="file" accept="video/*,.mp4,.m4v,.mov,.webm,.avi,.mkv" multiple />
       </label>
     </section>
 
@@ -80,7 +80,7 @@
     <article class="video-card">
       <div class="video-frame">
         <div class="media-viewport">
-          <video class="local-media" preload="metadata" playsinline></video>
+          <video class="local-media" preload="metadata" playsinline webkit-playsinline></video>
         </div>
         <div class="media-error" hidden></div>
         <div class="pair-move-controls" aria-label="並列位置を入れ替える">

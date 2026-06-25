@@ -542,8 +542,13 @@
     return item;
   };
 
-  const addFiles = fileList => {
-    const files = [...fileList].filter(file => file.type.startsWith('video/') || /\.(mp4|m4v|mov|webm|avi|mkv)$/i.test(file.name));
+  const addFiles = (fileList, trustPickerSelection = false) => {
+    const candidates = [...fileList];
+    // iPhoneのフォトライブラリではMIMEタイプや拡張子が空になることがある。
+    // ファイル選択ダイアログから渡されたものはブラウザのaccept指定を信頼して読み込みを試す。
+    const files = trustPickerSelection
+      ? candidates
+      : candidates.filter(file => (file.type || '').startsWith('video/') || /\.(mp4|m4v|mov|webm|avi|mkv)$/i.test(file.name || ''));
     files.forEach(addLocalVideo);
     updateColumnLayout();
     refreshLayout();
@@ -758,8 +763,10 @@
   };
 
   fileInput.addEventListener('change', () => {
-    addFiles(fileInput.files);
-    fileInput.value = '';
+    const selectedFiles = Array.from(fileInput.files || []);
+    addFiles(selectedFiles, true);
+    // iOS Safariで選択直後に参照が切れないよう、次のタスクで入力だけ初期化する。
+    window.setTimeout(() => { fileInput.value = ''; }, 0);
   });
 
 
@@ -782,6 +789,8 @@
   });
 
   dropZone.addEventListener('click', event => {
+    // ラベル自体をタップした場合はブラウザ標準のファイル選択に任せ、二重起動を防ぐ。
+    if (event.target.closest('.file-button')) return;
     fileInput.click();
   });
   dropZone.addEventListener('keydown', event => {
