@@ -412,29 +412,46 @@
     video.addEventListener('canplay', resolve, { once: true });
   });
 
-  const playActive = async () => {
+  const playActive = () => {
     const active = getActiveItems();
     if (active.length === 0) {
       setStatus('先に動画を追加してください。');
       return;
     }
     if (mode === 'pair' && active.length !== 2) {
-      setStatus('並列動画モードでは動画を2本選択してください。');
       return;
     }
 
     pauseEveryVideo();
-    await Promise.all(active.map(item => waitUntilReady(item.video)));
     syncActive();
 
-    try {
-      await Promise.all(active.map(item => item.video.play()));
-      startSyncMonitor();
-      setStatus('');
-    } catch (error) {
-      console.error(error);
-      setStatus('ブラウザが再生を止めました。もう一度「再生」を押してください。');
-    }
+    // iOS Safariでは、タップイベント内でplay()を直接呼ばないと
+    // ユーザー操作による再生とみなされない。ready待ちやawaitを先に挟まない。
+    const playPromises = active.map(item => {
+      const video = item.video;
+      try {
+        const result = video.play();
+        return result && typeof result.then === 'function'
+          ? result
+          : Promise.resolve();
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    });
+
+    Promise.allSettled(playPromises).then(results => {
+      const failed = results.filter(result => result.status === 'rejected');
+      if (failed.length === 0) {
+        startSyncMonitor();
+        setStatus('');
+        return;
+      }
+
+      console.error('再生できなかった動画:', failed.map(result => result.reason));
+      // 一部だけ再生できた場合も同期監視を開始する。
+      if (active.some(item => !item.video.paused)) startSyncMonitor();
+      setStatus('再生できない動画があります。動画上の再生ボタンも試してください。');
+    });
   };
 
   const pauseActive = () => {
