@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>複数動画同期プレーヤー</title>
-  <link rel="stylesheet" href="styles.css?v=ios-sync-2" />
+  <link rel="stylesheet" href="styles.css?v=ios-preload-1" />
 </head>
 <body>
   <main>
@@ -44,6 +44,7 @@
       <button id="multiModeButton" class="mode-button icon-button active" type="button" title="複数動画モード" aria-label="複数動画モード">▦</button>
       <button id="pairModeButton" class="mode-button icon-button" type="button" title="並列動画モード" aria-label="並列動画モード">▥</button>
       <span class="toolbar-separator" aria-hidden="true"></span>
+      <button id="preparePlayback" class="icon-button" type="button" title="同期再生を事前準備" aria-label="同期再生を事前準備">⚡</button>
       <button id="playAll" class="icon-button" type="button" title="再生" aria-label="再生">▶</button>
       <button id="pauseAll" class="icon-button" type="button" title="一時停止" aria-label="一時停止">⏸</button>
       <button id="restartAll" class="icon-button" type="button" title="先頭に戻す" aria-label="先頭に戻す">↺</button>
@@ -118,6 +119,6 @@
     </article>
   </template>
 
-  <script src="app.js?v=ios-sync-2"></script>
+  <script src="app.js?v=ios-preload-1"></script>
 </body>
 </html>

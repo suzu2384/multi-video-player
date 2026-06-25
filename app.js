@@ -8,6 +8,7 @@
   const videoGrid = document.getElementById('videoGrid');
   const template = document.getElementById('videoCardTemplate');
   const masterVolume = document.getElementById('masterVolume');
+  const preparePlaybackButton = document.getElementById('preparePlayback');
   const multiModeButton = document.getElementById('multiModeButton');
   const pairModeButton = document.getElementById('pairModeButton');
   const selectionCount = document.getElementById('selectionCount');
@@ -65,6 +66,24 @@
   let audioContext = null;
   let audioDestination = null;
   let columnsManuallySet = false;
+  let preparedPlayback = null;
+
+  const invalidatePreparedPlayback = () => {
+    preparedPlayback = null;
+    if (preparePlaybackButton) {
+      preparePlaybackButton.classList.remove('active');
+      preparePlaybackButton.setAttribute('aria-pressed', 'false');
+      preparePlaybackButton.title = '同期再生を事前準備';
+    }
+  };
+
+  const getPreparationKey = (active = getActiveItems()) =>
+    `${mode}|${active.map(item => item.url).join('|')}`;
+
+  const isPreparedForCurrentState = (active, logicalTime) =>
+    preparedPlayback &&
+    preparedPlayback.key === getPreparationKey(active) &&
+    Math.abs(preparedPlayback.logicalTime - logicalTime) < 0.08;
 
   const formatTime = (seconds) => {
     if (!Number.isFinite(seconds)) return '00:00.0';
@@ -275,6 +294,7 @@
   }
 
   const setMode = (nextMode) => {
+    if (mode !== nextMode) invalidatePreparedPlayback();
     if (nextMode === 'pair' && getPairItems().length !== 2) return;
 
     pauseEveryVideo();
@@ -340,6 +360,7 @@
       audioSource: null
     };
     items.push(item);
+    invalidatePreparedPlayback();
 
     title.textContent = file.name;
     title.title = file.name;
@@ -384,9 +405,10 @@
     });
 
     volume.addEventListener('input', () => applyVolume(item));
-    offset.addEventListener('change', syncActive);
+    offset.addEventListener('change', () => { invalidatePreparedPlayback(); syncActive(); });
 
     seek.addEventListener('input', () => {
+      invalidatePreparedPlayback();
       if (!video.duration) return;
       const selectedVideoTime = (Number(seek.value) / 1000) * video.duration;
       const targets = getActiveItems().includes(item) ? getActiveItems() : [item];
@@ -410,6 +432,7 @@
     });
 
     pairCheckbox.addEventListener('change', () => {
+      invalidatePreparedPlayback();
       if (pairCheckbox.checked && getPairItems().length > 2) {
         pairCheckbox.checked = false;
         setStatus('並列再生に選択できる動画は2本です。先に選択中の動画を外してください。');
@@ -432,6 +455,7 @@
     item.card.remove();
     const index = items.indexOf(item);
     if (index >= 0) items.splice(index, 1);
+    invalidatePreparedPlayback();
 
     if (mode === 'pair' && getPairItems().length !== 2) mode = 'multi';
     if (getPairItems().length < 2) pairReversed = false;
@@ -465,15 +489,18 @@
   });
 
   let startingPlayback = false;
+  let preparingPlayback = false;
 
-  const playActive = async () => {
-    if (startingPlayback) return;
+  const prepareActivePlayback = async () => {
+    if (preparingPlayback || startingPlayback) return;
 
     const active = getActiveItems();
     if (active.length === 0) return;
     if (mode === 'pair' && active.length !== 2) return;
 
-    startingPlayback = true;
+    preparingPlayback = true;
+    invalidatePreparedPlayback();
+    if (preparePlaybackButton) preparePlaybackButton.disabled = true;
     const playButton = document.getElementById('playAll');
     if (playButton) playButton.disabled = true;
 
@@ -485,59 +512,90 @@
     syncToLogicalTime(logicalStart, active);
 
     try {
-      // 1段目: タップイベントの権限が有効な間に全動画へplay()を発行し、
-      // iPhone側のデコーダーを全本分立ち上げる。
-      const warmupPromises = active.map(item => {
-        const video = item.video;
+      // このplay()群は準備ボタンのタップ処理内で即座に呼び、
+      // iOS Safari上で全動画の再生権限とデコーダーを先に確保する。
+      const warmupResults = await Promise.allSettled(active.map(item => {
         try {
-          const result = video.play();
+          const result = item.video.play();
           return result && typeof result.then === 'function' ? result : Promise.resolve();
         } catch (error) {
           return Promise.reject(error);
         }
-      });
+      }));
 
-      const warmupResults = await Promise.allSettled(warmupPromises);
       if (warmupResults.every(result => result.status === 'rejected')) {
         throw warmupResults[0].reason;
       }
 
-      // 各動画が実際にplayingへ到達するまで待つ。ここで起動時間の差を吸収する。
       await Promise.all(active.map(item =>
         item.video.paused
-          ? waitForEventOrTimeout(item.video, 'playing', 2200)
+          ? waitForEventOrTimeout(item.video, 'playing', 2400)
           : Promise.resolve()
       ));
 
       active.forEach(item => item.video.pause());
 
-      // 2段目: 全動画をもう一度同じ論理時刻へ戻し、seek完了をそろえる。
       const seekWaits = active.map(item => {
         const target = clampVideoTime(item, logicalStart + getOffset(item));
         if (Math.abs(item.video.currentTime - target) < 0.015) return Promise.resolve();
         item.video.currentTime = target;
-        return waitForEventOrTimeout(item.video, 'seeked', 1800);
+        return waitForEventOrTimeout(item.video, 'seeked', 2000);
       });
       await Promise.all(seekWaits);
-
-      // seek後のフレームが用意されるまで待ってから、本再生を同時要求する。
       await Promise.all(active.map(item => waitUntilReady(item.video)));
-      const finalPlayResults = await Promise.allSettled(active.map(item => item.video.play()));
-      const failed = finalPlayResults.filter(result => result.status === 'rejected');
-      if (failed.length === active.length) throw failed[0].reason;
 
-      // 本再生直後に再度同一時刻へ補正する。Safariで先に走った動画をここで戻す。
-      syncToLogicalTime(logicalStart, active);
-      startSyncMonitor();
-      runStartupSyncBurst(active);
-      setStatus('');
+      preparedPlayback = {
+        key: getPreparationKey(active),
+        logicalTime: logicalStart
+      };
+      if (preparePlaybackButton) {
+        preparePlaybackButton.classList.add('active');
+        preparePlaybackButton.setAttribute('aria-pressed', 'true');
+        preparePlaybackButton.title = '同期再生の準備完了';
+      }
     } catch (error) {
-      console.error('同期再生の開始に失敗しました:', error);
-      if (active.some(item => !item.video.paused)) startSyncMonitor();
+      console.error('同期再生の事前準備に失敗しました:', error);
+      invalidatePreparedPlayback();
     } finally {
-      startingPlayback = false;
+      preparingPlayback = false;
+      if (preparePlaybackButton) preparePlaybackButton.disabled = false;
       if (playButton) playButton.disabled = false;
     }
+  };
+
+  const playActive = () => {
+    if (startingPlayback || preparingPlayback) return;
+
+    const active = getActiveItems();
+    if (active.length === 0) return;
+    if (mode === 'pair' && active.length !== 2) return;
+
+    const logicalStart = Math.max(0, getLogicalTime(active[0]));
+
+    // 準備済みなら、再生ボタンのタップ処理から一切待たずに
+    // 全videoへplay()を発行する。これがiPhoneで最もずれにくい。
+    if (isPreparedForCurrentState(active, logicalStart)) {
+      startingPlayback = true;
+      resetPlaybackRates(active);
+      syncToLogicalTime(logicalStart, active);
+      const results = active.map(item => {
+        try { return item.video.play(); }
+        catch (error) { return Promise.reject(error); }
+      });
+      Promise.allSettled(results).then(settled => {
+        if (settled.some(result => result.status === 'fulfilled')) {
+          startSyncMonitor();
+          runStartupSyncBurst(active);
+        }
+      }).finally(() => {
+        startingPlayback = false;
+      });
+      return;
+    }
+
+    // 未準備時は勝手に遅延再生せず、準備だけ実行する。
+    // ⚡が点灯した後に▶を押すと即時同期再生になる。
+    prepareActivePlayback();
   };
 
   const pauseActive = () => {
@@ -547,6 +605,7 @@
   };
 
   const restartActive = () => {
+    invalidatePreparedPlayback();
     syncToLogicalTime(0);
     setStatus('表示中の動画を開始位置へ戻しました。');
   };
@@ -760,10 +819,12 @@
 
   multiModeButton.addEventListener('click', () => setMode('multi'));
   pairModeButton.addEventListener('click', () => setMode('pair'));
+  preparePlaybackButton.addEventListener('click', prepareActivePlayback);
   document.getElementById('playAll').addEventListener('click', playActive);
   document.getElementById('pauseAll').addEventListener('click', pauseActive);
   document.getElementById('restartAll').addEventListener('click', restartActive);
   document.getElementById('syncAll').addEventListener('click', () => {
+    invalidatePreparedPlayback();
     syncActive();
     setStatus('表示中の動画の再生位置をそろえました。');
   });
@@ -785,6 +846,7 @@
   pairWidth.addEventListener('input', applyPairSize);
   pairHeight.addEventListener('input', applyPairSize);
   swapPair.addEventListener('click', () => {
+    invalidatePreparedPlayback();
     if (getPairItems().length !== 2) {
       setStatus('左右を入れ替えるには動画を2本選択してください。');
       return;
