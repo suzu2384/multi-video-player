@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>複数動画同期プレーヤー</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main>
+    <section id="pairSettings" class="pair-settings" aria-label="並列表示設定">
+      <span class="section-icon" title="並列動画の表示サイズ" aria-label="並列動画の表示サイズ">▣</span>
+      <label class="icon-field" title="動画領域の横幅（px）">
+        <span aria-hidden="true">↔</span><span class="sr-only">横幅（px）</span>
+        <input id="pairWidth" type="number" min="320" max="3840" step="10" value="1280" aria-label="動画領域の横幅（px）" />
+      </label>
+      <label class="icon-field" title="動画領域の縦幅（px）">
+        <span aria-hidden="true">↕</span><span class="sr-only">縦幅（px）</span>
+        <input id="pairHeight" type="number" min="180" max="2160" step="10" value="720" aria-label="動画領域の縦幅（px）" />
+      </label>
+      <button id="swapPair" class="icon-button" type="button" title="左右を入れ替える" aria-label="左右を入れ替える">⇄</button>
+      <button id="resetPairSize" class="icon-button" type="button" title="並列表示サイズを初期値に戻す" aria-label="並列表示サイズを初期値に戻す">↺</button>
+      <button id="exportPair" type="button" class="icon-button" title="並列動画を書き出す" aria-label="並列動画を書き出す">⬇</button>
+      <label class="icon-field export-option" title="書き出しコーデック">
+        <span aria-hidden="true">🎞</span><span class="sr-only">書き出しコーデック</span>
+        <select id="exportCodec" aria-label="書き出しコーデック"></select>
+      </label>
+      <label class="icon-field export-option" title="映像ビットレート">
+        <span aria-hidden="true">⚙</span><span class="sr-only">映像ビットレート</span>
+        <select id="exportBitrate" aria-label="映像ビットレート">
+          <option value="4000000">4 Mbps</option>
+          <option value="8000000" selected>8 Mbps</option>
+          <option value="12000000">12 Mbps</option>
+          <option value="20000000">20 Mbps</option>
+        </select>
+      </label>
+      <div id="exportProgress" class="export-progress" hidden aria-live="polite">
+        <progress id="exportProgressBar" max="100" value="0"></progress>
+        <span id="exportProgressText">0%</span>
+      </div>
+    </section>
+
+    <section class="toolbar" aria-label="共通操作">
+      <button id="multiModeButton" class="mode-button icon-button active" type="button" title="複数動画モード" aria-label="複数動画モード">▦</button>
+      <button id="pairModeButton" class="mode-button icon-button" type="button" title="並列動画モード" aria-label="並列動画モード">▥</button>
+      <span class="toolbar-separator" aria-hidden="true"></span>
+      <button id="playAll" class="icon-button" type="button" title="再生" aria-label="再生">▶</button>
+      <button id="pauseAll" class="icon-button" type="button" title="一時停止" aria-label="一時停止">⏸</button>
+      <button id="restartAll" class="icon-button" type="button" title="先頭に戻す" aria-label="先頭に戻す">↺</button>
+      <button id="syncAll" class="icon-button" type="button" title="再同期" aria-label="再同期">⟳</button>
+      <button id="removeAll" type="button" class="danger icon-button" title="すべて削除" aria-label="すべて削除">🗑</button>
+
+      <label class="range-field icon-field" title="共通音量">
+        <span aria-hidden="true">🔊</span><span class="sr-only">共通音量</span>
+        <input id="masterVolume" type="range" min="0" max="1" step="0.01" value="1" aria-label="共通音量" />
+      </label>
+
+    </section>
+
+    <section id="dropZone" class="drop-zone" tabindex="0">
+      <div class="drop-instruction">
+        <strong>動画ファイルをここにドロップ</strong>
+        <span>複数のファイルをまとめて追加できます</span>
+      </div>
+      <label class="file-button icon-button" title="動画を選択して追加" aria-label="動画を選択して追加">
+        ＋
+        <input id="fileInput" type="file" accept="video/*" multiple />
+      </label>
+    </section>
+
+    <section id="videoGrid" class="video-grid multi-mode" aria-live="polite"></section>
+    <div id="multiStats" class="multi-stats" aria-label="複数動画モードの状態">
+      <span id="videoCount" class="icon-status" title="追加されている動画数" aria-label="追加されている動画数">🎞 0</span>
+      <span id="selectionCount" class="icon-status" title="並列動画の選択数" aria-label="並列動画の選択数">▥ 0 / 2</span>
+      <label class="icon-field" title="複数動画モードの列数">
+        <span aria-hidden="true">▦</span><span class="sr-only">列数</span>
+        <select id="columnCount" aria-label="複数動画モードの列数"></select>
+      </label>
+    </div>
+  </main>
+
+  <template id="videoCardTemplate">
+    <article class="video-card">
+      <div class="video-frame">
+        <video preload="metadata" playsinline></video>
+        <label class="pair-selector" title="並列動画に選択">
+          <span aria-hidden="true">▥</span><span class="sr-only">並列動画に選択</span>
+          <input class="pair-checkbox" type="checkbox" aria-label="並列動画に選択" />
+        </label>
+      </div>
+      <div class="video-info">
+        <div class="title-row">
+          <span class="video-title"></span>
+          <button type="button" class="remove-button" title="この動画を削除">✕</button>
+        </div>
+        <div class="video-controls">
+          <label class="icon-field" title="個別音量">
+            <span aria-hidden="true">🔉</span><span class="sr-only">個別音量</span>
+            <input class="volume-slider" type="range" min="0" max="1" step="0.01" value="1" aria-label="個別音量" />
+          </label>
+          <label class="icon-field" title="開始位置（秒）">
+            <span aria-hidden="true">⏱</span><span class="sr-only">開始位置（秒）</span>
+            <input class="start-offset" type="number" min="0" step="0.1" value="0" aria-label="開始位置（秒）" /><span class="input-unit" aria-hidden="true">秒</span>
+          </label>
+        </div>
+        <div class="crop-controls">
+          <span class="section-icon" title="並列表示の切り抜き" aria-label="並列表示の切り抜き">✂</span>
+          <label class="icon-field" title="拡大率"><span aria-hidden="true">🔍</span><span class="sr-only">拡大率</span><input class="crop-zoom" type="range" min="0.25" max="3" step="0.01" value="1" aria-label="拡大率" /><output>1.00×</output><button class="reset-zoom icon-button mini-reset" type="button" title="拡大率をリセット" aria-label="拡大率をリセット">↺</button></label>
+          <label class="icon-field" title="横方向の表示位置"><span aria-hidden="true">↔</span><span class="sr-only">横方向の表示位置</span><input class="crop-x" type="range" min="0" max="100" step="1" value="50" aria-label="横方向の表示位置" /><output>50%</output><button class="reset-x icon-button mini-reset" type="button" title="横位置をリセット" aria-label="横位置をリセット">↺</button></label>
+          <label class="icon-field" title="縦方向の表示位置"><span aria-hidden="true">↕</span><span class="sr-only">縦方向の表示位置</span><input class="crop-y" type="range" min="0" max="100" step="1" value="50" aria-label="縦方向の表示位置" /><output>50%</output><button class="reset-y icon-button mini-reset" type="button" title="縦位置をリセット" aria-label="縦位置をリセット">↺</button></label>
+        </div>
+        <div class="time-row">
+          <span class="current-time">00:00.0</span>
+          <input class="seek-slider" type="range" min="0" max="1000" step="1" value="0" />
+          <span class="duration">00:00.0</span>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
