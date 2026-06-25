@@ -8,7 +8,6 @@
   const videoGrid = document.getElementById('videoGrid');
   const template = document.getElementById('videoCardTemplate');
   const masterVolume = document.getElementById('masterVolume');
-  const preparePlaybackButton = document.getElementById('preparePlayback');
   const multiModeButton = document.getElementById('multiModeButton');
   const pairModeButton = document.getElementById('pairModeButton');
   const selectionCount = document.getElementById('selectionCount');
@@ -66,24 +65,7 @@
   let audioContext = null;
   let audioDestination = null;
   let columnsManuallySet = false;
-  let preparedPlayback = null;
-
-  const invalidatePreparedPlayback = () => {
-    preparedPlayback = null;
-    if (preparePlaybackButton) {
-      preparePlaybackButton.classList.remove('active');
-      preparePlaybackButton.setAttribute('aria-pressed', 'false');
-      preparePlaybackButton.title = '同期再生を事前準備';
-    }
-  };
-
-  const getPreparationKey = (active = getActiveItems()) =>
-    `${mode}|${active.map(item => item.url).join('|')}`;
-
-  const isPreparedForCurrentState = (active, logicalTime) =>
-    preparedPlayback &&
-    preparedPlayback.key === getPreparationKey(active) &&
-    Math.abs(preparedPlayback.logicalTime - logicalTime) < 0.08;
+  const invalidatePreparedPlayback = () => {};
 
   const formatTime = (seconds) => {
     if (!Number.isFinite(seconds)) return '00:00.0';
@@ -102,12 +84,9 @@
 
   const updateResponsiveColumns = () => {
     const columns = Math.min(6, Math.max(1, Number(columnCount.value) || 1));
-    const isMobile = window.matchMedia('(max-width: 760px)').matches;
-    const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-    // スマホでも動画本数に応じた変更を即時反映する。
-    // 画面幅に収まらない場合だけ縦2列・横3列を上限とする。
-    const visibleColumns = isMobile ? Math.min(columns, isPortrait ? 2 : 3) : columns;
-    videoGrid.style.setProperty('--mobile-columns', String(visibleColumns));
+    // iPhoneを含め、選択された列数をそのまま反映する。
+    // 画面幅への収まりはカード側の縮小で調整する。
+    videoGrid.style.setProperty('--mobile-columns', String(columns));
   };
 
   const updateColumnLayout = ({ forceAuto = false } = {}) => {
@@ -500,113 +479,38 @@
   });
 
   let startingPlayback = false;
-  let preparingPlayback = false;
-
-  const prepareActivePlayback = async () => {
-    if (preparingPlayback || startingPlayback) return;
-
-    const active = getActiveItems();
-    if (active.length === 0) return;
-    if (mode === 'pair' && active.length !== 2) return;
-
-    preparingPlayback = true;
-    invalidatePreparedPlayback();
-    if (preparePlaybackButton) preparePlaybackButton.disabled = true;
-    const playButton = document.getElementById('playAll');
-    if (playButton) playButton.disabled = true;
-
-    pauseEveryVideo();
-    stopSyncMonitor();
-
-    const logicalStart = Math.max(0, getLogicalTime(active[0]));
-    resetPlaybackRates(active);
-    syncToLogicalTime(logicalStart, active);
-
-    try {
-      // このplay()群は準備ボタンのタップ処理内で即座に呼び、
-      // iOS Safari上で全動画の再生権限とデコーダーを先に確保する。
-      const warmupResults = await Promise.allSettled(active.map(item => {
-        try {
-          const result = item.video.play();
-          return result && typeof result.then === 'function' ? result : Promise.resolve();
-        } catch (error) {
-          return Promise.reject(error);
-        }
-      }));
-
-      if (warmupResults.every(result => result.status === 'rejected')) {
-        throw warmupResults[0].reason;
-      }
-
-      await Promise.all(active.map(item =>
-        item.video.paused
-          ? waitForEventOrTimeout(item.video, 'playing', 2400)
-          : Promise.resolve()
-      ));
-
-      active.forEach(item => item.video.pause());
-
-      const seekWaits = active.map(item => {
-        const target = clampVideoTime(item, logicalStart + getOffset(item));
-        if (Math.abs(item.video.currentTime - target) < 0.015) return Promise.resolve();
-        item.video.currentTime = target;
-        return waitForEventOrTimeout(item.video, 'seeked', 2000);
-      });
-      await Promise.all(seekWaits);
-      await Promise.all(active.map(item => waitUntilReady(item.video)));
-
-      preparedPlayback = {
-        key: getPreparationKey(active),
-        logicalTime: logicalStart
-      };
-      if (preparePlaybackButton) {
-        preparePlaybackButton.classList.add('active');
-        preparePlaybackButton.setAttribute('aria-pressed', 'true');
-        preparePlaybackButton.title = '同期再生の準備完了';
-      }
-    } catch (error) {
-      console.error('同期再生の事前準備に失敗しました:', error);
-      invalidatePreparedPlayback();
-    } finally {
-      preparingPlayback = false;
-      if (preparePlaybackButton) preparePlaybackButton.disabled = false;
-      if (playButton) playButton.disabled = false;
-    }
-  };
 
   const playActive = () => {
-    if (startingPlayback || preparingPlayback) return;
+    if (startingPlayback) return;
 
     const active = getActiveItems();
     if (active.length === 0) return;
     if (mode === 'pair' && active.length !== 2) return;
 
+    pauseEveryVideo();
     const logicalStart = Math.max(0, getLogicalTime(active[0]));
+    syncToLogicalTime(logicalStart, active);
+    resetPlaybackRates(active);
+    startingPlayback = true;
 
-    // 準備済みなら、再生ボタンのタップ処理から一切待たずに
-    // 全videoへplay()を発行する。これがiPhoneで最もずれにくい。
-    if (isPreparedForCurrentState(active, logicalStart)) {
-      startingPlayback = true;
-      resetPlaybackRates(active);
-      syncToLogicalTime(logicalStart, active);
-      const results = active.map(item => {
-        try { return item.video.play(); }
-        catch (error) { return Promise.reject(error); }
-      });
-      Promise.allSettled(results).then(settled => {
-        if (settled.some(result => result.status === 'fulfilled')) {
-          startSyncMonitor();
-          runStartupSyncBurst(active);
-        }
-      }).finally(() => {
-        startingPlayback = false;
-      });
-      return;
-    }
+    const playPromises = active.map(item => {
+      try {
+        const result = item.video.play();
+        return result && typeof result.then === 'function' ? result : Promise.resolve();
+      } catch (error) {
+        return Promise.reject(error);
+      }
+    });
 
-    // 未準備時は勝手に遅延再生せず、準備だけ実行する。
-    // ⚡が点灯した後に▶を押すと即時同期再生になる。
-    prepareActivePlayback();
+    Promise.allSettled(playPromises).then(results => {
+      if (results.some(result => result.status === 'fulfilled')) {
+        syncToLogicalTime(logicalStart, active);
+        startSyncMonitor();
+        runStartupSyncBurst(active);
+      }
+    }).finally(() => {
+      startingPlayback = false;
+    });
   };
 
   const pauseActive = () => {
@@ -797,8 +701,14 @@
 
   fileInput.addEventListener('change', () => {
     const selectedFiles = Array.from(fileInput.files || []);
-    addFiles(selectedFiles);
-    // iOSでBlob URLの生成前に選択内容が破棄されないよう、処理後に解除する。
+    // フォトライブラリ由来のFileはMIMEタイプや拡張子が欠ける場合があるため、
+    // picker経由では形式判定で除外せず追加を試みる。
+    addFiles(selectedFiles, { trustPicker: true });
+    // iOSではDOM追加が完了した次のフレームでもう一度本数を基準に再計算する。
+    requestAnimationFrame(() => {
+      updateColumnLayout();
+      refreshLayout();
+    });
     window.setTimeout(() => { fileInput.value = ''; }, 0);
   });
 
@@ -830,7 +740,6 @@
 
   multiModeButton.addEventListener('click', () => setMode('multi'));
   pairModeButton.addEventListener('click', () => setMode('pair'));
-  preparePlaybackButton.addEventListener('click', prepareActivePlayback);
   document.getElementById('playAll').addEventListener('click', playActive);
   document.getElementById('pauseAll').addEventListener('click', pauseActive);
   document.getElementById('restartAll').addEventListener('click', restartActive);
