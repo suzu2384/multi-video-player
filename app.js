@@ -25,13 +25,28 @@
   const exportCodec = document.getElementById('exportCodec');
   const exportBitrate = document.getElementById('exportBitrate');
 
-  for (let count = 1; count <= 6; count += 1) {
-    const option = document.createElement('option');
-    option.value = String(count);
-    option.textContent = `${count}`;
-    if (count === 2) option.selected = true;
-    columnCount.appendChild(option);
-  }
+  const getColumnLimit = () => {
+    if (window.matchMedia('(max-width: 760px) and (orientation: portrait)').matches) return 2;
+    if (window.matchMedia('(max-height: 560px) and (orientation: landscape)').matches) return 3;
+    return 6;
+  };
+
+  const updateColumnOptions = () => {
+    const limit = getColumnLimit();
+    const previous = Math.min(limit, Math.max(1, Number(columnCount.value) || 1));
+    columnCount.replaceChildren();
+    for (let count = 1; count <= limit; count += 1) {
+      const option = document.createElement('option');
+      option.value = String(count);
+      option.textContent = `${count}`;
+      columnCount.appendChild(option);
+    }
+    columnCount.value = String(previous);
+    return limit;
+  };
+
+  updateColumnOptions();
+  columnCount.value = String(Math.min(2, getColumnLimit()));
   videoGrid.style.setProperty('--multi-columns', columnCount.value);
   const recorderFormats = [
     { value: '', label: '自動', extension: 'webm' },
@@ -83,22 +98,24 @@
   const getActiveItems = () => mode === 'pair' ? getPairItems() : items;
 
   const updateResponsiveColumns = () => {
-    const columns = Math.min(6, Math.max(1, Number(columnCount.value) || 1));
-    // iPhoneを含め、選択された列数をそのまま反映する。
-    // 画面幅への収まりはカード側の縮小で調整する。
+    const limit = updateColumnOptions();
+    const columns = Math.min(limit, Math.max(1, Number(columnCount.value) || 1));
+    columnCount.value = String(columns);
     videoGrid.style.setProperty('--mobile-columns', String(columns));
+    videoGrid.style.setProperty('--multi-columns', String(columns));
   };
 
   const updateColumnLayout = ({ forceAuto = false } = {}) => {
     if (forceAuto) columnsManuallySet = false;
+    const limit = updateColumnOptions();
     if (!columnsManuallySet) {
-      const automaticColumns = Math.min(6, Math.max(1, items.length));
+      const automaticColumns = Math.min(limit, Math.max(1, items.length));
       columnCount.value = String(automaticColumns);
     }
-    const columns = Math.min(6, Math.max(1, Number(columnCount.value) || 1));
+    const columns = Math.min(limit, Math.max(1, Number(columnCount.value) || 1));
     columnCount.value = String(columns);
     videoGrid.style.setProperty('--multi-columns', String(columns));
-    updateResponsiveColumns();
+    videoGrid.style.setProperty('--mobile-columns', String(columns));
   };
 
   const fitPairToViewport = () => {
@@ -794,7 +811,12 @@
     fitPairToViewport();
     updateResponsiveColumns();
   });
-  window.addEventListener('orientationchange', () => setTimeout(updateResponsiveColumns, 120));
+  window.addEventListener('orientationchange', () => {
+    setTimeout(() => {
+      updateColumnLayout();
+      fitPairToViewport();
+    }, 120);
+  });
 
   window.addEventListener('beforeunload', () => {
     stopSyncMonitor();
