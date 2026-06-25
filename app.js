@@ -246,10 +246,22 @@
     setStatus(mode === 'pair' ? '選択した2本を並列表示しました。再生すると同期します。' : '');
   };
 
+  const VIDEO_FILE_PATTERN = /\.(mp4|m4v|mov|webm|ogv|ogg|avi|mkv)$/i;
+
+  const isVideoFile = (file) => {
+    // iOSのフォトライブラリから選んだファイルは、MIMEタイプが空になる場合がある。
+    // MIMEタイプに加えてファイル名の拡張子でも判定する。
+    return Boolean(
+      file &&
+      ((typeof file.type === 'string' && file.type.startsWith('video/')) ||
+       VIDEO_FILE_PATTERN.test(file.name || ''))
+    );
+  };
+
   const addFiles = (fileList) => {
-    const files = [...fileList].filter(file => file.type.startsWith('video/'));
+    const files = Array.from(fileList || []).filter(isVideoFile);
     if (files.length === 0) {
-      setStatus('動画ファイルを選択してください。');
+      setStatus('選択した動画を読み込めませんでした。');
       return;
     }
 
@@ -293,11 +305,17 @@
     title.title = file.name;
     video.src = url;
     video.loop = false;
+    video.load();
     applyVolume(item);
     applyCrop(item);
 
     video.addEventListener('loadedmetadata', () => {
       duration.textContent = formatTime(video.duration);
+    });
+
+    video.addEventListener('error', () => {
+      card.classList.add('video-error');
+      title.title = `${file.name}（この端末では再生できない形式の可能性があります）`;
     });
 
     video.addEventListener('timeupdate', () => {
@@ -589,8 +607,10 @@
   };
 
   fileInput.addEventListener('change', () => {
-    addFiles(fileInput.files);
-    fileInput.value = '';
+    const selectedFiles = Array.from(fileInput.files || []);
+    addFiles(selectedFiles);
+    // iOSでBlob URLの生成前に選択内容が破棄されないよう、処理後に解除する。
+    window.setTimeout(() => { fileInput.value = ''; }, 0);
   });
 
   ['dragenter', 'dragover'].forEach(eventName => {
@@ -610,7 +630,11 @@
   document.addEventListener('drop', event => {
     if (mode === 'multi') addFiles(event.dataTransfer.files);
   });
-  dropZone.addEventListener('click', () => fileInput.click());
+  dropZone.addEventListener('click', event => {
+    // ラベル内のfile inputはブラウザ標準で開くため、親のクリック処理を重ねない。
+    if (event.target.closest('.file-button')) return;
+    fileInput.click();
+  });
   dropZone.addEventListener('keydown', event => {
     if (event.key === 'Enter' || event.key === ' ') fileInput.click();
   });
