@@ -100,6 +100,16 @@
   };
   const getActiveItems = () => mode === 'pair' ? getPairItems() : items;
 
+  const updateResponsiveColumns = () => {
+    const columns = Math.min(6, Math.max(1, Number(columnCount.value) || 1));
+    const isMobile = window.matchMedia('(max-width: 760px)').matches;
+    const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+    // スマホでも動画本数に応じた変更を即時反映する。
+    // 画面幅に収まらない場合だけ縦2列・横3列を上限とする。
+    const visibleColumns = isMobile ? Math.min(columns, isPortrait ? 2 : 3) : columns;
+    videoGrid.style.setProperty('--mobile-columns', String(visibleColumns));
+  };
+
   const updateColumnLayout = ({ forceAuto = false } = {}) => {
     if (forceAuto) columnsManuallySet = false;
     if (!columnsManuallySet) {
@@ -109,6 +119,7 @@
     const columns = Math.min(6, Math.max(1, Number(columnCount.value) || 1));
     columnCount.value = String(columns);
     videoGrid.style.setProperty('--multi-columns', String(columns));
+    updateResponsiveColumns();
   };
 
   const fitPairToViewport = () => {
@@ -870,7 +881,11 @@
   });
   exportPair.addEventListener('click', exportPairVideo);
 
-  window.addEventListener('resize', fitPairToViewport);
+  window.addEventListener('resize', () => {
+    fitPairToViewport();
+    updateResponsiveColumns();
+  });
+  window.addEventListener('orientationchange', () => setTimeout(updateResponsiveColumns, 120));
 
   window.addEventListener('beforeunload', () => {
     stopSyncMonitor();
@@ -880,33 +895,4 @@
   applyPairSize();
   updateColumnLayout();
   refreshLayout();
-})();
-
-
-// スマートフォンでは、指定列数を尊重しつつ視認できる列数へ自動上限を設ける。
-(() => {
-  const grid = document.getElementById('videoGrid');
-  const columnSelect = document.getElementById('columnCount');
-  const pairSettings = document.getElementById('pairSettings');
-  const toolbar = document.querySelector('.toolbar');
-  if (!grid || !columnSelect) return;
-
-  const updateMobileLayout = () => {
-    const portrait = matchMedia('(orientation: portrait)').matches;
-    const mobile = matchMedia('(max-width: 760px)').matches;
-    const desired = Math.max(1, Number(columnSelect.value) || 1);
-    const mobileColumns = mobile ? Math.min(desired, portrait ? 2 : 3) : desired;
-    grid.style.setProperty('--mobile-columns', String(mobileColumns));
-
-    const root = document.documentElement;
-    if (toolbar) root.style.setProperty('--toolbar-height', `${Math.ceil(toolbar.getBoundingClientRect().height)}px`);
-    if (pairSettings) root.style.setProperty('--pair-settings-height', `${Math.ceil(pairSettings.getBoundingClientRect().height)}px`);
-  };
-
-  columnSelect.addEventListener('change', updateMobileLayout);
-  window.addEventListener('resize', updateMobileLayout, { passive: true });
-  window.addEventListener('orientationchange', () => setTimeout(updateMobileLayout, 120));
-  if (window.visualViewport) window.visualViewport.addEventListener('resize', updateMobileLayout, { passive: true });
-  new MutationObserver(updateMobileLayout).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-  requestAnimationFrame(updateMobileLayout);
 })();
