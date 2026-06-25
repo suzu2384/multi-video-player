@@ -2,12 +2,9 @@
 <html lang="ja">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>複数動画同期プレーヤー</title>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-  <meta http-equiv="Pragma" content="no-cache" />
-  <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="styles.css?v=mobile-canvas-4" />
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main>
@@ -52,31 +49,24 @@
       <button id="restartAll" class="icon-button" type="button" title="先頭に戻す" aria-label="先頭に戻す">↺</button>
       <button id="syncAll" class="icon-button" type="button" title="再同期" aria-label="再同期">⟳</button>
       <button id="removeAll" type="button" class="danger icon-button" title="すべて削除" aria-label="すべて削除">🗑</button>
-
       <label class="range-field icon-field" title="共通音量">
         <span aria-hidden="true">🔊</span><span class="sr-only">共通音量</span>
         <input id="masterVolume" type="range" min="0" max="1" step="0.01" value="1" aria-label="共通音量" />
       </label>
-
     </section>
 
     <section id="dropZone" class="drop-zone" tabindex="0">
       <div class="drop-instruction">
         <strong>動画ファイルをここにドロップ</strong>
-        <span>複数のファイルをまとめて追加できます</span>
+        <span>ローカル動画は複数のファイルをまとめて追加できます</span>
       </div>
-      <label class="file-button icon-button" title="動画を選択して追加" aria-label="動画を選択して追加">
+      <label class="file-button icon-button" title="動画ファイルを選択して追加" aria-label="動画ファイルを選択して追加">
         ＋
-        <input id="fileInput" type="file" accept="video/*,.mp4,.mov,.m4v,.webm,.hevc" multiple />
+        <input id="fileInput" type="file" accept="video/*" multiple />
       </label>
     </section>
 
-    <section id="videoGrid" class="video-grid multi-mode" aria-live="polite">
-      <div id="pairCanvasStage" class="pair-canvas-stage" hidden>
-        <canvas id="pairCanvas" aria-label="フレーム同期された並列動画"></canvas>
-        <div id="pairCanvasWaiting" class="pair-canvas-waiting">フレームを同期中…</div>
-      </div>
-    </section>
+    <section id="videoGrid" class="video-grid multi-mode" aria-live="polite"></section>
     <div id="multiStats" class="multi-stats" aria-label="複数動画モードの状態">
       <span id="videoCount" class="icon-status" title="追加されている動画数" aria-label="追加されている動画数">🎞 0</span>
       <span id="selectionCount" class="icon-status" title="並列動画の選択数" aria-label="並列動画の選択数">▥ 0 / 2</span>
@@ -90,7 +80,10 @@
   <template id="videoCardTemplate">
     <article class="video-card">
       <div class="video-frame">
-        <video preload="metadata" playsinline></video>
+        <div class="media-viewport">
+          <video class="local-media" preload="metadata" playsinline></video>
+        </div>
+        <div class="media-error" hidden></div>
         <label class="pair-selector" title="並列動画に選択">
           <span aria-hidden="true">▥</span><span class="sr-only">並列動画に選択</span>
           <input class="pair-checkbox" type="checkbox" aria-label="並列動画に選択" />
@@ -99,7 +92,7 @@
       <div class="video-info">
         <div class="title-row">
           <span class="video-title"></span>
-          <button type="button" class="remove-button" title="この動画を削除">✕</button>
+          <button type="button" class="remove-button" title="この動画を削除" aria-label="この動画を削除">✕</button>
         </div>
         <div class="video-controls">
           <label class="icon-field" title="個別音量">
@@ -119,13 +112,13 @@
         </div>
         <div class="time-row">
           <span class="current-time">00:00.0</span>
-          <input class="seek-slider" type="range" min="0" max="1000" step="1" value="0" />
+          <input class="seek-slider" type="range" min="0" max="1000" step="1" value="0" aria-label="再生位置" />
           <span class="duration">00:00.0</span>
         </div>
       </div>
     </article>
   </template>
 
-  <script src="app.js?v=mobile-canvas-4"></script>
+  <script src="app.js"></script>
 </body>
 </html>

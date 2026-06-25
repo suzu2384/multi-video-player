@@ -685,356 +685,108 @@ body:not(.pair-view) .export-option { display: none; }
   .pair-settings select { max-width: 145px; }
 }
 
-
-/* ===== スマートフォン向けレスポンシブ最適化 ===== */
-@media (pointer: coarse) {
-  button, .file-button, select, input[type="number"] { min-height: 44px; }
-  input[type="range"] { min-height: 32px; }
-  .icon-button { min-width: 44px; min-height: 44px; }
-  .mini-reset { min-width: 36px; width: 36px; min-height: 36px; height: 36px; }
-}
-
-@media (max-width: 760px) {
-  :root { font-size: 14px; }
-  body {
-    padding-bottom: calc(var(--toolbar-height, 72px) + env(safe-area-inset-bottom));
-    overscroll-behavior-y: contain;
-  }
-  main {
-    padding: 8px 8px calc(var(--toolbar-height, 72px) + 12px);
-  }
-  .drop-zone {
-    min-height: 104px;
-    margin-bottom: 8px;
-    border-radius: 12px;
-  }
-  .drop-instruction strong { font-size: 14px; }
-  .drop-instruction span { font-size: 12px; }
-  .video-grid.multi-mode {
-    width: 100%;
-    grid-template-columns: repeat(var(--mobile-columns, 1), minmax(0, 1fr));
-    gap: 8px;
-  }
-  .multi-mode .video-card { border-radius: 9px; }
-  .multi-mode .video-info { padding: 7px 8px; }
-  .multi-mode .video-title { font-size: 12px; }
-  .multi-mode .video-controls { gap: 5px; flex-wrap: wrap; }
-  .multi-mode .time-row { gap: 5px; }
-  .multi-mode .volume-slider { width: min(110px, 28vw); }
-  .multi-mode .start-offset { width: 68px; }
-  .pair-selector { top: 5px; left: 5px; min-width: 38px; min-height: 38px; }
-
-  .toolbar {
-    left: 6px;
-    right: 6px;
-    bottom: calc(6px + env(safe-area-inset-bottom));
-    width: auto;
-    min-height: 58px;
-    max-height: none;
-    padding: 6px;
-    gap: 5px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    border: 1px solid #3b4554;
-    border-radius: 14px;
-    scrollbar-width: none;
-  }
-  .toolbar::-webkit-scrollbar { display: none; }
-  .toolbar-separator { min-height: 34px; flex: 0 0 1px; }
-  .toolbar .range-field { min-width: 132px; flex: 0 0 auto; }
-  .toolbar .range-field input { width: 88px; }
-
-  .multi-stats {
-    right: 8px;
-    bottom: calc(var(--toolbar-height, 64px) + 14px + env(safe-area-inset-bottom));
-    max-width: calc(100vw - 16px);
-    gap: 7px;
-    padding: 5px 7px;
-    border-radius: 9px;
-  }
-
-  body.pair-view {
-    min-height: 100dvh;
-    overflow: hidden;
-  }
-  body.pair-view main {
-    height: 100dvh;
-    padding: 6px 6px calc(var(--toolbar-height, 64px) + 10px + env(safe-area-inset-bottom));
-  }
-  body.pair-view .pair-settings {
-    width: 100%;
-    max-height: 58px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    margin-bottom: 6px;
-    padding: 5px 6px;
-    border-radius: 10px;
-    scrollbar-width: none;
-  }
-  body.pair-view .pair-settings::-webkit-scrollbar { display: none; }
-  body.pair-view .pair-settings label,
-  body.pair-view .pair-settings button,
-  body.pair-view .pair-settings .export-progress { flex: 0 0 auto; }
-  body.pair-view .pair-settings input[type="number"] { width: 72px; }
-  body.pair-view .pair-settings select { max-width: 130px; }
-  .export-progress { min-width: 145px; }
-  .export-progress progress { width: 92px; }
-}
-
-/* スマホ縦画面: 動画を上段、各操作パネルを下段へ */
-@media (max-width: 760px) and (orientation: portrait) {
-  body.pair-view .video-grid.pair-mode {
-    width: 100%;
-    height: min(
-      calc(100dvh - var(--toolbar-height, 64px) - var(--pair-settings-height, 58px) - 24px),
-      760px
-    );
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: minmax(150px, 42%) minmax(0, 58%);
-    border-radius: 9px;
-  }
-  body.pair-view .video-grid.pair-mode .video-card.pair-left .video-frame {
-    grid-column: 1; grid-row: 1;
-  }
-  body.pair-view .video-grid.pair-mode .video-card.pair-right .video-frame {
-    grid-column: 2; grid-row: 1;
-  }
-  body.pair-view .video-grid.pair-mode .video-card.pair-left .video-info {
-    grid-column: 1; grid-row: 2;
-    border-right: 1px solid #303641;
-    border-top: 1px solid #303641;
-  }
-  body.pair-view .video-grid.pair-mode .video-card.pair-right .video-info {
-    grid-column: 2; grid-row: 2;
-    border-left: 0;
-    border-top: 1px solid #303641;
-  }
-  body.pair-view .video-grid.pair-mode .video-info {
-    padding: 6px;
-    overflow-y: auto;
-  }
-  body.pair-view .video-grid.pair-mode .title-row { font-size: 11px; }
-  body.pair-view .video-grid.pair-mode .video-controls {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-  body.pair-view .video-grid.pair-mode .crop-controls {
-    grid-template-columns: 1fr;
-    gap: 4px;
-  }
-  body.pair-view .video-grid.pair-mode .crop-controls .icon-field {
-    grid-template-columns: 24px minmax(40px, 1fr) 38px 36px;
-    gap: 3px;
-  }
-  body.pair-view .video-grid.pair-mode .time-row {
-    margin-top: 4px;
-  }
-}
-
-/* スマホ横画面: 左操作・動画2本・右操作の横一列を維持 */
-@media (max-height: 560px) and (orientation: landscape) {
-  body.pair-view main {
-    height: 100dvh;
-    padding: 4px 4px calc(var(--toolbar-height, 56px) + 7px + env(safe-area-inset-bottom));
-  }
-  body.pair-view .pair-settings {
-    max-height: 48px;
-    margin-bottom: 4px;
-    padding: 3px 5px;
-  }
-  body.pair-view .pair-settings input[type="number"] { width: 64px; min-height: 36px; }
-  body.pair-view .pair-settings .icon-button { min-width: 38px; min-height: 38px; }
-  body.pair-view .video-grid.pair-mode {
-    --pair-panel-width: clamp(126px, 19vw, 180px);
-    width: 100%;
-    height: calc(100dvh - var(--toolbar-height, 56px) - var(--pair-settings-height, 48px) - 16px);
-    grid-template-columns:
-      var(--pair-panel-width)
-      minmax(0, 1fr)
-      minmax(0, 1fr)
-      var(--pair-panel-width);
-    grid-template-rows: minmax(0, 1fr);
-    border-radius: 8px;
-  }
-  body.pair-view .video-grid.pair-mode .video-info { padding: 5px; }
-  body.pair-view .video-grid.pair-mode .title-row { font-size: 10px; }
-  body.pair-view .video-grid.pair-mode .video-controls,
-  body.pair-view .video-grid.pair-mode .time-row { margin-top: 3px; gap: 3px; }
-  body.pair-view .video-grid.pair-mode .crop-controls {
-    margin-top: 3px;
-    padding-top: 3px;
-    gap: 2px;
-  }
-  body.pair-view .video-grid.pair-mode .crop-controls .icon-field {
-    grid-template-columns: 20px minmax(35px, 1fr) 34px 30px;
-    gap: 2px;
-    font-size: 10px;
-  }
-  body.pair-view .video-grid.pair-mode .video-controls label { gap: 2px; }
-  body.pair-view .video-grid.pair-mode .start-offset { min-height: 32px; }
-  .toolbar {
-    min-height: 50px;
-    padding: 4px;
-  }
-  .toolbar .icon-button { min-width: 40px; min-height: 40px; }
-}
-
-@media (max-width: 390px) and (orientation: portrait) {
-  .multi-stats .icon-status { font-size: 12px; }
-  .multi-stats { gap: 4px; }
-  body.pair-view .video-grid.pair-mode .video-controls { display: none; }
-  body.pair-view .video-grid.pair-mode { grid-template-rows: minmax(145px, 46%) minmax(0, 54%); }
-}
-
-/* iOS: 読み込み直後でも動画領域が確認でき、ネイティブ操作も使える */
-.video-frame video { min-width: 100%; min-height: 100%; }
-.video-card.video-error .video-frame::after {
-  content: "この動画を読み込めませんでした";
-  position: absolute; inset: 0; display: grid; place-items: center;
-  padding: 12px; color: #fff; background: rgba(120, 20, 20, .82);
-  text-align: center; font-size: 13px; z-index: 3;
-}
-@supports (-webkit-touch-callout: none) {
-  .video-frame video { -webkit-transform: translateZ(0); }
-}
-
-
-/* フレーム同期型リアルタイム合成 */
-.pair-canvas-stage {
+/* PC版: ローカル動画専用 */
+.media-viewport {
   position: relative;
-  min-width: 0;
-  min-height: 0;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   background: #000;
+  --crop-zoom: 1;
+  --crop-x: 50%;
+  --crop-y: 50%;
 }
-.pair-canvas-stage[hidden] { display: none !important; }
-.pair-canvas-stage canvas {
+.media-viewport > .local-media {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
+  border: 0;
   background: #000;
 }
-.pair-canvas-waiting {
+.media-viewport > [hidden] { display: none !important; }
+.video-grid.pair-mode .media-viewport > .local-media {
+  transform: scale(var(--crop-zoom, 1));
+  transform-origin: var(--crop-x, 50%) var(--crop-y, 50%);
+}
+.video-grid.pair-mode .media-viewport > .local-media {
+  object-fit: cover;
+  object-position: var(--crop-x, 50%) var(--crop-y, 50%);
+}
+.media-error {
   position: absolute;
   inset: 0;
+  z-index: 4;
   display: grid;
   place-items: center;
-  color: #d9dde6;
-  background: rgba(0,0,0,.44);
-  font-size: 13px;
-  pointer-events: none;
+  padding: 20px;
+  background: rgba(20, 12, 15, .9);
+  color: #ffb9c2;
+  text-align: center;
+  line-height: 1.5;
 }
-.pair-canvas-stage.frame-ready .pair-canvas-waiting { display: none; }
-/* Canvas合成は mobile-composite-active のときだけ有効。PCでは通常のvideoを表示する。 */
-body.pair-view:not(.mobile-composite-active) .video-grid.pair-mode .pair-canvas-stage {
-  display: none !important;
-}
-body.pair-view:not(.mobile-composite-active) .video-grid.pair-mode .video-frame {
-  visibility: visible;
-  pointer-events: auto;
-}
+.media-error[hidden] { display: none !important; }
+.pair-selector { z-index: 5; }
+.title-row .video-title { flex: 1; min-width: 0; }
+#exportPair:disabled { opacity: .35; }
 
-/* スマホでは複数・並列とも映像を1枚のCanvasへ合成して表示する。PCは従来のvideo表示。 */
-@media (max-width: 760px), (pointer: coarse) {
-  body.mobile-composite-active .pair-canvas-stage {
-    display: block !important;
-    grid-column: 1 / -1;
-    width: min(100%, var(--pair-display-width, 100%));
-    max-height: calc(100svh - var(--toolbar-height, 64px) - 190px);
-    margin: 0 auto;
-    background: #000;
+
+
+/* 並列モード: 縦長ウィンドウでは操作パネルを動画の下へ配置 */
+@media (orientation: portrait) {
+  body.pair-view .video-grid.pair-mode {
+    width: var(--pair-display-width, min(var(--pair-width, 1280px), 100%));
+    height: calc(var(--pair-display-height, 720px) + var(--pair-panel-height, 250px));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows:
+      minmax(0, var(--pair-display-height, 720px))
+      minmax(0, var(--pair-panel-height, 250px));
     overflow: hidden;
-    order: -10;
+    background: #000;
   }
-  body.mobile-composite-active .pair-canvas-stage canvas {
-    display: block;
+
+  body.pair-view .video-grid.pair-mode .video-card.pair-left .video-frame {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  body.pair-view .video-grid.pair-mode .video-card.pair-right .video-frame {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  body.pair-view .video-grid.pair-mode .video-card.pair-left .video-info {
+    grid-column: 1;
+    grid-row: 2;
+    border: 0;
+    border-top: 1px solid #303641;
+    border-right: 1px solid #303641;
+  }
+
+  body.pair-view .video-grid.pair-mode .video-card.pair-right .video-info {
+    grid-column: 2;
+    grid-row: 2;
+    border: 0;
+    border-top: 1px solid #303641;
+  }
+
+  body.pair-view .video-grid.pair-mode .video-info {
     width: 100%;
-    height: auto;
-    max-height: inherit;
-    object-fit: contain;
+    height: var(--pair-panel-height, 250px);
   }
-  body.mobile-composite-active .pair-canvas-waiting { display: none !important; }
-  body.mobile-composite-active .video-card .video-frame video {
-    position: absolute !important;
-    width: 1px !important;
-    height: 1px !important;
-    opacity: 0 !important;
-    pointer-events: none !important;
-  }
-  body.mobile-composite-active .video-card .video-frame {
-    min-height: 0 !important;
-    height: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-  body.mobile-composite-active .video-card .pair-selector {
-    position: relative;
-    display: inline-flex;
-    inset: auto;
-    margin: 4px;
-  }
-}
 
+  body.pair-view .video-grid.pair-mode .video-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
 
-/* スマホ端末では複数・並列とも映像表示をCanvasへ統一する */
-body.mobile-composite-device.mobile-composite-active #videoGrid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) !important;
-  width: 100% !important;
-  height: auto !important;
-}
-body.mobile-composite-device.mobile-composite-active #pairCanvasStage {
-  display: block !important;
-  width: 100% !important;
-  max-width: 100% !important;
-  height: auto !important;
-  aspect-ratio: auto;
-  grid-column: 1 / -1;
-  order: -100;
-  border-radius: 10px;
-  background: #000;
-}
-body.mobile-composite-device.mobile-composite-active #pairCanvasStage canvas {
-  display: block !important;
-  width: 100% !important;
-  height: auto !important;
-  max-height: calc(100svh - var(--toolbar-height, 64px) - 110px);
-  object-fit: contain;
-  background: #000;
-}
-/* iOS Safariは display:none の video を停止するため、元動画は画面外で極小再生を継続する。 */
-body.mobile-composite-device.mobile-composite-active #videoGrid > .video-card .video-frame {
-  display: block !important;
-  position: fixed !important;
-  left: -12px !important;
-  top: -12px !important;
-  width: 4px !important;
-  height: 4px !important;
-  min-width: 4px !important;
-  min-height: 4px !important;
-  overflow: hidden !important;
-  opacity: 0.001 !important;
-  pointer-events: none !important;
-  z-index: -1 !important;
-}
-body.mobile-composite-device.mobile-composite-active #videoGrid > .video-card .video-frame video {
-  display: block !important;
-  position: absolute !important;
-  inset: 0 !important;
-  width: 4px !important;
-  height: 4px !important;
-  min-width: 4px !important;
-  min-height: 4px !important;
-  opacity: 1 !important;
-}
-body.mobile-composite-device.mobile-composite-active #videoGrid > .video-card {
-  display: block !important;
-  height: auto !important;
-  min-height: 0 !important;
-}
-body.mobile-composite-device.mobile-composite-active #videoGrid > .video-card .video-info {
-  display: block;
+  body.pair-view .video-grid.pair-mode .crop-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body.pair-view .video-grid.pair-mode .crop-controls .section-icon {
+    grid-column: 1 / -1;
+  }
 }
