@@ -25,10 +25,23 @@
   const exportCodec = document.getElementById('exportCodec');
   const exportBitrate = document.getElementById('exportBitrate');
 
+  const getViewportSize = () => {
+    const viewport = window.visualViewport;
+    return {
+      width: Math.round(viewport?.width || window.innerWidth || document.documentElement.clientWidth),
+      height: Math.round(viewport?.height || window.innerHeight || document.documentElement.clientHeight)
+    };
+  };
+
+  const isMobileLayout = () => {
+    const { width, height } = getViewportSize();
+    return Math.min(width, height) <= 760 || window.matchMedia('(pointer: coarse)').matches;
+  };
+
   const getColumnLimit = () => {
-    if (window.matchMedia('(max-width: 760px) and (orientation: portrait)').matches) return 2;
-    if (window.matchMedia('(max-height: 560px) and (orientation: landscape)').matches) return 3;
-    return 6;
+    const { width, height } = getViewportSize();
+    if (!isMobileLayout()) return 6;
+    return height >= width ? 2 : 3;
   };
 
   const updateColumnOptions = () => {
@@ -807,16 +820,18 @@
   });
   exportPair.addEventListener('click', exportPairVideo);
 
-  window.addEventListener('resize', () => {
-    fitPairToViewport();
-    updateResponsiveColumns();
-  });
-  window.addEventListener('orientationchange', () => {
-    setTimeout(() => {
+  let responsiveUpdateTimer = null;
+  const scheduleResponsiveUpdate = () => {
+    clearTimeout(responsiveUpdateTimer);
+    responsiveUpdateTimer = setTimeout(() => {
       updateColumnLayout();
       fitPairToViewport();
-    }, 120);
-  });
+    }, 180);
+  };
+
+  window.addEventListener('resize', scheduleResponsiveUpdate);
+  window.addEventListener('orientationchange', scheduleResponsiveUpdate);
+  window.visualViewport?.addEventListener('resize', scheduleResponsiveUpdate);
 
   window.addEventListener('beforeunload', () => {
     stopSyncMonitor();
