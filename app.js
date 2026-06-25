@@ -1,5 +1,7 @@
 (() => {
-  const SYNC_TOLERANCE_SECONDS = 0.08;
+  const SYNC_TOLERANCE_SECONDS = 0.035;
+  const HARD_SYNC_TOLERANCE_SECONDS = 0.18;
+  const SYNC_INTERVAL_MS = 60;
 
   const fileInput = document.getElementById('fileInput');
   const dropZone = document.getElementById('dropZone');
@@ -213,21 +215,55 @@
     syncToLogicalTime(Math.max(0, getLogicalTime(active[0])), active);
   };
 
+  const resetPlaybackRates = (targets = items) => {
+    targets.forEach(item => {
+      try { item.video.playbackRate = 1; } catch (_) {}
+    });
+  };
+
   const maintainSync = () => {
     const active = getActiveItems();
-    if (active.length < 2 || active.some(item => item.video.paused)) return;
+    const playing = active.filter(item => !item.video.paused && !item.video.ended);
+    if (playing.length < 2) return;
 
-    const referenceTime = getLogicalTime(active[0]);
-    active.slice(1).forEach(item => {
-      if (Math.abs(referenceTime - getLogicalTime(item)) > SYNC_TOLERANCE_SECONDS) {
+    const reference = playing[0];
+    const referenceTime = getLogicalTime(reference);
+    reference.video.playbackRate = 1;
+
+    playing.slice(1).forEach(item => {
+      const drift = getLogicalTime(item) - referenceTime;
+      const absoluteDrift = Math.abs(drift);
+
+      if (absoluteDrift >= HARD_SYNC_TOLERANCE_SECONDS) {
         item.video.currentTime = clampVideoTime(item, referenceTime + getOffset(item));
+        item.video.playbackRate = 1;
+      } else if (absoluteDrift >= SYNC_TOLERANCE_SECONDS) {
+        // 先行している動画は少し遅く、遅れている動画は少し速くして滑らかに追従させる。
+        item.video.playbackRate = drift > 0 ? 0.94 : 1.06;
+      } else {
+        item.video.playbackRate = 1;
       }
     });
   };
 
+  const runStartupSyncBurst = (active) => {
+    const startedAt = performance.now();
+    const align = () => {
+      if (active.some(item => item.video.paused)) return;
+      maintainSync();
+      if (performance.now() - startedAt < 1400) {
+        window.setTimeout(align, 40);
+      } else {
+        resetPlaybackRates(active);
+        maintainSync();
+      }
+    };
+    window.setTimeout(align, 0);
+  };
+
   const startSyncMonitor = () => {
     stopSyncMonitor();
-    syncTimer = window.setInterval(maintainSync, 250);
+    syncTimer = window.setInterval(maintainSync, SYNC_INTERVAL_MS);
   };
 
   function stopSyncMonitor() {
@@ -235,6 +271,7 @@
       window.clearInterval(syncTimer);
       syncTimer = null;
     }
+    resetPlaybackRates();
   }
 
   const setMode = (nextMode) => {
@@ -423,7 +460,11 @@
     }
 
     pauseEveryVideo();
-    syncActive();
+
+    // 全動画を同じ論理時刻へそろえてから、同じタップ処理内で一斉に再生要求する。
+    const logicalStart = Math.max(0, getLogicalTime(active[0]));
+    syncToLogicalTime(logicalStart, active);
+    resetPlaybackRates(active);
 
     // iOS Safariでは、タップイベント内でplay()を直接呼ばないと
     // ユーザー操作による再生とみなされない。ready待ちやawaitを先に挟まない。
@@ -442,7 +483,10 @@
     Promise.allSettled(playPromises).then(results => {
       const failed = results.filter(result => result.status === 'rejected');
       if (failed.length === 0) {
+        // iPhoneではデコーダー起動の差で最初だけずれやすいので、開始直後は高頻度で補正する。
+        syncToLogicalTime(logicalStart, active);
         startSyncMonitor();
+        runStartupSyncBurst(active);
         setStatus('');
         return;
       }
