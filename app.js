@@ -37,9 +37,18 @@
     };
   };
 
+  const mobileCompositeDevice = (() => {
+    const ua = navigator.userAgent || '';
+    const mobileUa = /iPhone|iPad|iPod|Android|Mobile/i.test(ua);
+    const touchTablet = navigator.maxTouchPoints > 1 && Math.min(screen.width, screen.height) <= 1024;
+    return mobileUa || touchTablet;
+  })();
+  document.documentElement.classList.toggle('mobile-composite-device', mobileCompositeDevice);
+  document.body.classList.toggle('mobile-composite-device', mobileCompositeDevice);
+
   const isMobileLayout = () => {
     const { width, height } = getViewportSize();
-    return Math.min(width, height) <= 760 || window.matchMedia('(pointer: coarse)').matches;
+    return mobileCompositeDevice || Math.min(width, height) <= 760 || window.matchMedia('(pointer: coarse)').matches;
   };
 
   const getColumnLimit = () => {
@@ -127,7 +136,7 @@
     pairAudioItem = null;
   };
 
-  const isMobileComposite = () => isMobileLayout();
+  const isMobileComposite = () => mobileCompositeDevice;
 
   const resizeCompositeCanvas = () => {
     if (mode === 'pair') {
@@ -181,19 +190,24 @@
 
   const startPairFrameCompositor = () => {
     stopPairFrameCompositor({ restoreAudio: false });
-    if (!isMobileComposite()) return;
+    if (!isMobileComposite() || getActiveItems().length === 0) return;
+    if (mode === 'pair' && getActiveItems().length !== 2) return;
     const generation = ++pairFrameGeneration;
     document.body.classList.add('mobile-composite-active');
     pairCanvasStage.hidden = false;
     pairCanvasStage.classList.add('frame-ready');
     pairCanvasWaiting.textContent = '';
     pairFrameStarted = true;
-    const render = () => {
+    let lastDraw = 0;
+    const render = (now = 0) => {
       if (generation !== pairFrameGeneration || !isMobileComposite()) return;
-      drawCompositeFrame();
+      if (now - lastDraw >= 33 || lastDraw === 0) {
+        drawCompositeFrame();
+        lastDraw = now;
+      }
       pairFrameAnimation = requestAnimationFrame(render);
     };
-    render();
+    pairFrameAnimation = requestAnimationFrame(render);
   };
 
   const drawPairCanvasFrame = () => {
@@ -281,9 +295,15 @@
     columnCount.disabled = isExporting;
     exportCodec.disabled = isExporting;
     exportBitrate.disabled = isExporting;
-    pairCanvasStage.hidden = !isMobileComposite();
-    document.body.classList.toggle('mobile-composite-active', isMobileComposite());
-    if (isMobileComposite()) resizePairCanvas();
+    const shouldComposite = isMobileComposite() && getActiveItems().length > 0 && (mode !== 'pair' || getActiveItems().length === 2);
+    pairCanvasStage.hidden = !shouldComposite;
+    document.body.classList.toggle('mobile-composite-active', shouldComposite);
+    if (shouldComposite) {
+      resizePairCanvas();
+      startPairFrameCompositor();
+    } else {
+      stopPairFrameCompositor();
+    }
 
     items.forEach(item => {
       const isSelected = item.pairCheckbox.checked;
@@ -651,7 +671,7 @@
   const pauseActive = () => {
     getActiveItems().forEach(item => item.video.pause());
     stopSyncMonitor();
-    stopPairFrameCompositor();
+    if (isMobileComposite()) drawCompositeFrame();
     setStatus('一時停止しました。');
   };
 

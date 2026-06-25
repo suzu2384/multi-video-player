@@ -977,3 +977,42 @@ body.pair-view:not(.mobile-composite-active) .video-grid.pair-mode .video-frame 
     margin: 4px;
   }
 }
+
+
+/* スマホ端末では複数・並列とも映像表示をCanvasへ統一する */
+body.mobile-composite-device.mobile-composite-active #videoGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) !important;
+  width: 100% !important;
+  height: auto !important;
+}
+body.mobile-composite-device.mobile-composite-active #pairCanvasStage {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  height: auto !important;
+  aspect-ratio: auto;
+  grid-column: 1 / -1;
+  order: -100;
+  border-radius: 10px;
+  background: #000;
+}
+body.mobile-composite-device.mobile-composite-active #pairCanvasStage canvas {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  max-height: calc(100svh - var(--toolbar-height, 64px) - 110px);
+  object-fit: contain;
+  background: #000;
+}
+body.mobile-composite-device.mobile-composite-active #videoGrid > .video-card .video-frame {
+  display: none !important;
+}
+body.mobile-composite-device.mobile-composite-active #videoGrid > .video-card {
+  display: block !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+body.mobile-composite-device.mobile-composite-active #videoGrid > .video-card .video-info {
+  display: block;
+}
