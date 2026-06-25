@@ -1005,8 +1005,30 @@ body.mobile-composite-device.mobile-composite-active #pairCanvasStage canvas {
   object-fit: contain;
   background: #000;
 }
+/* iOS Safariは display:none の video を停止するため、元動画は画面外で極小再生を継続する。 */
 body.mobile-composite-device.mobile-composite-active #videoGrid > .video-card .video-frame {
-  display: none !important;
+  display: block !important;
+  position: fixed !important;
+  left: -12px !important;
+  top: -12px !important;
+  width: 4px !important;
+  height: 4px !important;
+  min-width: 4px !important;
+  min-height: 4px !important;
+  overflow: hidden !important;
+  opacity: 0.001 !important;
+  pointer-events: none !important;
+  z-index: -1 !important;
+}
+body.mobile-composite-device.mobile-composite-active #videoGrid > .video-card .video-frame video {
+  display: block !important;
+  position: absolute !important;
+  inset: 0 !important;
+  width: 4px !important;
+  height: 4px !important;
+  min-width: 4px !important;
+  min-height: 4px !important;
+  opacity: 1 !important;
 }
 body.mobile-composite-device.mobile-composite-active #videoGrid > .video-card {
   display: block !important;

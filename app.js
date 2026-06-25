@@ -476,6 +476,9 @@
     const fragment = template.content.cloneNode(true);
     const card = fragment.querySelector('.video-card');
     const video = fragment.querySelector('video');
+    video.playsInline = true;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
     const title = fragment.querySelector('.video-title');
     const removeButton = fragment.querySelector('.remove-button');
     const volume = fragment.querySelector('.volume-slider');
