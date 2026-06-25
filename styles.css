@@ -888,3 +888,15 @@ body:not(.pair-view) .export-option { display: none; }
   body.pair-view .video-grid.pair-mode .video-controls { display: none; }
   body.pair-view .video-grid.pair-mode { grid-template-rows: minmax(145px, 46%) minmax(0, 54%); }
 }
+
+/* iOS: 読み込み直後でも動画領域が確認でき、ネイティブ操作も使える */
+.video-frame video { min-width: 100%; min-height: 100%; }
+.video-card.video-error .video-frame::after {
+  content: "この動画を読み込めませんでした";
+  position: absolute; inset: 0; display: grid; place-items: center;
+  padding: 12px; color: #fff; background: rgba(120, 20, 20, .82);
+  text-align: center; font-size: 13px; z-index: 3;
+}
+@supports (-webkit-touch-callout: none) {
+  .video-frame video { -webkit-transform: translateZ(0); }
+}

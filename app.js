@@ -258,8 +258,11 @@
     );
   };
 
-  const addFiles = (fileList) => {
-    const files = Array.from(fileList || []).filter(isVideoFile);
+  const addFiles = (fileList, { trustPicker = false } = {}) => {
+    // iOSのフォトライブラリでは、MIMEタイプや拡張子が欠けることがある。
+    // ファイル選択ダイアログから渡されたものは、判定で捨てずに読み込みを試す。
+    const sourceFiles = Array.from(fileList || []).filter(file => file && file.size > 0);
+    const files = trustPicker ? sourceFiles : sourceFiles.filter(isVideoFile);
     if (files.length === 0) {
       setStatus('選択した動画を読み込めませんでした。');
       return;
@@ -303,15 +306,28 @@
 
     title.textContent = file.name;
     title.title = file.name;
+    video.setAttribute('playsinline', '');
+    video.setAttribute('webkit-playsinline', '');
+    video.preload = 'auto';
+    video.controls = true;
     video.src = url;
     video.loop = false;
-    video.load();
+
+    // iOS SafariではDOMへ追加後にload()した方が安定する。
+    requestAnimationFrame(() => {
+      try { video.load(); } catch (error) { console.error(error); }
+    });
     applyVolume(item);
     applyCrop(item);
 
-    video.addEventListener('loadedmetadata', () => {
+    const markLoaded = () => {
+      card.classList.add('video-loaded');
+      card.classList.remove('video-error');
       duration.textContent = formatTime(video.duration);
-    });
+    };
+    video.addEventListener('loadedmetadata', markLoaded);
+    video.addEventListener('loadeddata', markLoaded);
+    video.addEventListener('canplay', markLoaded);
 
     video.addEventListener('error', () => {
       card.classList.add('video-error');
