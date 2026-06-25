@@ -17,7 +17,6 @@
   const pairSettings = document.getElementById('pairSettings');
   const pairWidth = document.getElementById('pairWidth');
   const pairHeight = document.getElementById('pairHeight');
-  const swapPair = document.getElementById('swapPair');
   const toolbar = document.querySelector('.toolbar');
   const columnCount = document.getElementById('columnCount');
   const exportPair = document.getElementById('exportPair');
@@ -50,7 +49,7 @@
   let mode = 'multi';
   let syncTimer = null;
   let uiTimer = null;
-  let pairReversed = false;
+  const pairOrder = [];
   let isExporting = false;
   let audioContext = null;
   let audioDestination = null;
@@ -76,7 +75,35 @@
 
   const getPairItems = () => {
     const selected = items.filter(item => item.pairCheckbox.checked);
-    return pairReversed ? [...selected].reverse() : selected;
+    const selectedIds = new Set(selected.map(item => item.id));
+    for (let index = pairOrder.length - 1; index >= 0; index -= 1) {
+      if (!selectedIds.has(pairOrder[index])) pairOrder.splice(index, 1);
+    }
+    selected.forEach(item => {
+      if (!pairOrder.includes(item.id)) pairOrder.push(item.id);
+    });
+    return pairOrder.map(id => selected.find(item => item.id === id)).filter(Boolean);
+  };
+
+  const swapPairPositions = (fromIndex, toIndex) => {
+    const pairItems = getPairItems();
+    if (fromIndex < 0 || toIndex < 0 || fromIndex >= pairItems.length || toIndex >= pairItems.length) return;
+    [pairOrder[fromIndex], pairOrder[toIndex]] = [pairOrder[toIndex], pairOrder[fromIndex]];
+    refreshLayout();
+  };
+
+  const movePairItem = (item, direction) => {
+    const pairItems = getPairItems();
+    const index = pairItems.indexOf(item);
+    if (index < 0) return;
+    const row = Math.floor(index / 2);
+    const column = index % 2;
+    let target = -1;
+    if (direction === 'left' && column === 1) target = index - 1;
+    if (direction === 'right' && column === 0) target = index + 1;
+    if (direction === 'up' && row === 1) target = index - 2;
+    if (direction === 'down' && row === 0) target = index + 2;
+    swapPairPositions(index, target);
   };
 
   const getActiveItems = () => (mode === 'pair' ? getPairItems() : items);
@@ -233,47 +260,65 @@
       const desiredWidth = Math.min(3840, Math.max(320, Number(pairWidth.value) || 1280));
       const desiredHeight = Math.min(2160, Math.max(180, Number(pairHeight.value) || 720));
       const top = videoGrid.getBoundingClientRect().top;
-      const availableHeight = Math.max(220, window.innerHeight - top - toolbarHeight - 8);
-      const availableWidth = Math.max(320, videoGrid.parentElement.clientWidth);
+      const availableHeight = Math.max(120, window.innerHeight - top - toolbarHeight - 8);
+      const availableWidth = Math.max(240, videoGrid.parentElement.clientWidth);
       const isPortraitWindow = window.innerHeight > window.innerWidth;
-      const panelWidth = availableWidth < 920 ? 190 : 250;
-      const panelHeight = availableHeight < 620 ? 190 : 250;
-      const videoAvailableWidth = isPortraitWindow
-        ? availableWidth
-        : Math.max(320, availableWidth - panelWidth * 2);
-      const videoAvailableHeight = isPortraitWindow
-        ? Math.max(180, availableHeight - panelHeight)
-        : availableHeight;
+      const pairCount = getPairItems().length;
+      const isGridPair = pairCount > 2;
+
+      let panelWidth = Math.round(Math.min(250, Math.max(140, availableWidth * 0.17)));
+      let panelHeight = Math.round(Math.min(230, Math.max(105, availableHeight * 0.20)));
+
+      let videoAvailableWidth = availableWidth;
+      let videoAvailableHeight = availableHeight;
+
+      if (isGridPair) {
+        if (isPortraitWindow) {
+          // 上段パネル + 2段の動画 + 下段パネル。動画同士は中央で隣接する。
+          panelHeight = Math.min(panelHeight, Math.max(80, Math.floor((availableHeight - 120) / 2)));
+          videoAvailableHeight = Math.max(80, availableHeight - panelHeight * 2);
+        } else {
+          // 左右端の操作パネル分だけ映像領域から差し引く。
+          panelWidth = Math.min(panelWidth, Math.max(110, Math.floor((availableWidth - 160) / 2)));
+          videoAvailableWidth = Math.max(120, availableWidth - panelWidth * 2);
+        }
+      } else if (isPortraitWindow) {
+        panelHeight = Math.min(panelHeight, Math.max(90, availableHeight - 120));
+        videoAvailableHeight = Math.max(80, availableHeight - panelHeight);
+      } else {
+        panelWidth = Math.min(panelWidth, Math.max(110, Math.floor((availableWidth - 160) / 2)));
+        videoAvailableWidth = Math.max(120, availableWidth - panelWidth * 2);
+      }
+
+      const scale = Math.max(0.05, Math.min(1, videoAvailableWidth / desiredWidth, videoAvailableHeight / desiredHeight));
+      const displayWidth = Math.max(1, Math.floor(desiredWidth * scale));
+      const displayHeight = Math.max(1, Math.floor(desiredHeight * scale));
 
       videoGrid.style.setProperty('--pair-panel-width', `${panelWidth}px`);
       videoGrid.style.setProperty('--pair-panel-height', `${panelHeight}px`);
+      videoGrid.style.setProperty('--pair-display-width', `${displayWidth}px`);
+      videoGrid.style.setProperty('--pair-display-height', `${displayHeight}px`);
 
-      document.body.classList.toggle('compact-pair', availableHeight < 570);
-      document.body.classList.toggle('ultra-compact', availableHeight < 430);
-
-      requestAnimationFrame(() => {
-        const scale = Math.min(1, videoAvailableWidth / desiredWidth, videoAvailableHeight / desiredHeight);
-        videoGrid.style.setProperty('--pair-display-width', `${Math.floor(desiredWidth * scale)}px`);
-        videoGrid.style.setProperty('--pair-display-height', `${Math.floor(desiredHeight * scale)}px`);
-      });
+      document.body.classList.toggle('compact-pair', availableHeight < 620 || availableWidth < 1000);
+      document.body.classList.toggle('ultra-compact', availableHeight < 430 || availableWidth < 720);
     });
   };
 
   const refreshLayout = () => {
     const selected = getPairItems();
-    selectionCount.textContent = `▥ ${selected.length} / 2`;
+    selectionCount.textContent = `▥ ${selected.length} / 4`;
     videoCount.textContent = `🎞 ${items.length}`;
 
     multiModeButton.classList.toggle('active', mode === 'multi');
     pairModeButton.classList.toggle('active', mode === 'pair');
-    pairModeButton.disabled = mode !== 'pair' && selected.length !== 2;
+    pairModeButton.disabled = mode !== 'pair' && (selected.length < 2 || selected.length > 4);
     videoGrid.classList.toggle('multi-mode', mode === 'multi');
     videoGrid.classList.toggle('pair-mode', mode === 'pair');
     pairSettings.classList.toggle('visible', mode === 'pair');
     dropZone.classList.toggle('mode-hidden', mode === 'pair');
 
     exportPair.hidden = mode !== 'pair';
-    exportPair.disabled = mode !== 'pair' || selected.length !== 2 || isExporting;
+    exportPair.disabled = mode !== 'pair' || selected.length < 2 || selected.length > 4 || isExporting;
     exportPair.title = '並列動画を書き出す';
     exportCodec.disabled = isExporting;
     exportBitrate.disabled = isExporting;
@@ -283,13 +328,35 @@
       const isSelected = item.pairCheckbox.checked;
       item.card.classList.toggle('pair-selected', isSelected);
       item.card.classList.toggle('hidden-in-pair', mode === 'pair' && !isSelected);
-      item.card.classList.remove('pair-left', 'pair-right');
+      item.card.classList.remove('pair-left', 'pair-right', 'pair-top-left', 'pair-top-right', 'pair-bottom-left', 'pair-bottom-right');
     });
 
+    videoGrid.classList.remove('pair-count-2', 'pair-count-3', 'pair-count-4');
     if (mode === 'pair') {
       const pairItems = getPairItems();
-      pairItems[0]?.card.classList.add('pair-left');
-      pairItems[1]?.card.classList.add('pair-right');
+      videoGrid.classList.add(`pair-count-${pairItems.length}`);
+      document.body.dataset.pairCount = String(pairItems.length);
+      const slotClasses = ['pair-top-left', 'pair-top-right', 'pair-bottom-left', 'pair-bottom-right'];
+      pairItems.forEach((item, index) => {
+        item.card.classList.add(slotClasses[index]);
+        if (index === 0) item.card.classList.add('pair-left');
+        if (index === 1) item.card.classList.add('pair-right');
+        item.card.style.order = String(index);
+        const buttons = item.card.querySelectorAll('.pair-move');
+        const row = Math.floor(index / 2);
+        const column = index % 2;
+        buttons.forEach(button => {
+          const direction = button.dataset.direction;
+          const target = direction === 'left' ? (column === 1 ? index - 1 : -1)
+            : direction === 'right' ? (column === 0 ? index + 1 : -1)
+            : direction === 'up' ? (row === 1 ? index - 2 : -1)
+            : (row === 0 ? index + 2 : -1);
+          button.disabled = target < 0 || target >= pairItems.length;
+        });
+      });
+    } else {
+      delete document.body.dataset.pairCount;
+      items.forEach(item => { item.card.style.order = ''; });
     }
 
     const ordered = mode === 'pair'
@@ -316,7 +383,7 @@
   };
 
   const setMode = nextMode => {
-    if (nextMode === 'pair' && getPairItems().length !== 2) return;
+    if (nextMode === 'pair' && (getPairItems().length < 2 || getPairItems().length > 4)) return;
     pauseEveryMedia();
     mode = nextMode;
     refreshLayout();
@@ -417,10 +484,22 @@
     });
 
     pairCheckbox.addEventListener('change', () => {
-      if (pairCheckbox.checked && items.filter(candidate => candidate.pairCheckbox.checked).length > 2) {
+      if (pairCheckbox.checked && items.filter(candidate => candidate.pairCheckbox.checked).length > 4) {
         pairCheckbox.checked = false;
       }
+      if (pairCheckbox.checked && !pairOrder.includes(item.id)) pairOrder.push(item.id);
+      if (!pairCheckbox.checked) {
+        const orderIndex = pairOrder.indexOf(item.id);
+        if (orderIndex >= 0) pairOrder.splice(orderIndex, 1);
+      }
       refreshLayout();
+    });
+
+    fragment.querySelectorAll('.pair-move').forEach(button => {
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        movePairItem(item, button.dataset.direction);
+      });
     });
 
     removeButton.addEventListener('click', () => removeItem(item));
@@ -477,8 +556,7 @@
     const index = items.indexOf(item);
     if (index >= 0) items.splice(index, 1);
 
-    if (mode === 'pair' && getPairItems().length !== 2) mode = 'multi';
-    if (getPairItems().length < 2) pairReversed = false;
+    if (mode === 'pair' && (getPairItems().length < 2 || getPairItems().length > 4)) mode = 'multi';
     stopSyncMonitor();
     updateColumnLayout();
     refreshLayout();
@@ -486,7 +564,7 @@
 
   const playActive = async () => {
     const active = getActiveItems();
-    if (active.length === 0 || (mode === 'pair' && active.length !== 2)) return;
+    if (active.length === 0 || (mode === 'pair' && (active.length < 2 || active.length > 4))) return;
 
     pauseEveryMedia();
     try {
@@ -554,7 +632,7 @@
 
   const exportPairVideo = async () => {
     const pairItems = getPairItems();
-    if (mode !== 'pair' || pairItems.length !== 2 || isExporting) return;
+    if (mode !== 'pair' || pairItems.length < 2 || pairItems.length > 4 || isExporting) return;
     if (!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) {
       window.alert('このブラウザは動画の書き出しに対応していません。ChromeまたはEdgeを使用してください。');
       return;
@@ -605,9 +683,15 @@
       const render = () => {
         context.fillStyle = '#000';
         context.fillRect(0, 0, width, height);
-        const halfWidth = width / 2;
-        drawCroppedVideo(context, pairItems[0], 0, 0, halfWidth, height);
-        drawCroppedVideo(context, pairItems[1], halfWidth, 0, width - halfWidth, height);
+        const columns = 2;
+        const rows = pairItems.length > 2 ? 2 : 1;
+        const cellWidth = width / columns;
+        const cellHeight = height / rows;
+        pairItems.forEach((item, index) => {
+          const column = index % columns;
+          const row = Math.floor(index / columns);
+          drawCroppedVideo(context, item, column * cellWidth, row * cellHeight, cellWidth, cellHeight);
+        });
         const progress = Math.min(exportDuration, Math.max(0, getLogicalTime(pairItems[0])));
         const percent = Math.min(100, Math.max(0, (progress / exportDuration) * 100));
         exportProgressBar.value = percent;
@@ -718,7 +802,7 @@
     [...items].forEach(item => removeItem(item));
     items.length = 0;
     mode = 'multi';
-    pairReversed = false;
+    pairOrder.length = 0;
     updateColumnLayout({ forceAuto: true });
     refreshLayout();
   });
@@ -727,11 +811,6 @@
   pairHeight.addEventListener('input', applyPairSize);
   pairWidth.addEventListener('change', applyPairSize);
   pairHeight.addEventListener('change', applyPairSize);
-  swapPair.addEventListener('click', () => {
-    if (getPairItems().length !== 2) return;
-    pairReversed = !pairReversed;
-    refreshLayout();
-  });
   document.getElementById('resetPairSize').addEventListener('click', () => {
     pairWidth.value = '1280';
     pairHeight.value = '720';

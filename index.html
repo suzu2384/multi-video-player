@@ -18,7 +18,6 @@
         <span aria-hidden="true">↕</span><span class="sr-only">縦幅（px）</span>
         <input id="pairHeight" type="number" min="180" max="2160" step="10" value="720" aria-label="動画領域の縦幅（px）" />
       </label>
-      <button id="swapPair" class="icon-button" type="button" title="左右を入れ替える" aria-label="左右を入れ替える">⇄</button>
       <button id="resetPairSize" class="icon-button" type="button" title="並列表示サイズを初期値に戻す" aria-label="並列表示サイズを初期値に戻す">↺</button>
       <button id="exportPair" type="button" class="icon-button" title="並列動画を書き出す" aria-label="並列動画を書き出す">⬇</button>
       <label class="icon-field export-option" title="書き出しコーデック">
@@ -69,7 +68,7 @@
     <section id="videoGrid" class="video-grid multi-mode" aria-live="polite"></section>
     <div id="multiStats" class="multi-stats" aria-label="複数動画モードの状態">
       <span id="videoCount" class="icon-status" title="追加されている動画数" aria-label="追加されている動画数">🎞 0</span>
-      <span id="selectionCount" class="icon-status" title="並列動画の選択数" aria-label="並列動画の選択数">▥ 0 / 2</span>
+      <span id="selectionCount" class="icon-status" title="並列動画の選択数" aria-label="並列動画の選択数">▥ 0 / 4</span>
       <label class="icon-field" title="複数動画モードの列数">
         <span aria-hidden="true">▦</span><span class="sr-only">列数</span>
         <select id="columnCount" aria-label="複数動画モードの列数"></select>
@@ -84,6 +83,12 @@
           <video class="local-media" preload="metadata" playsinline></video>
         </div>
         <div class="media-error" hidden></div>
+        <div class="pair-move-controls" aria-label="並列位置を入れ替える">
+          <button type="button" class="pair-move move-up" data-direction="up" title="上の動画と入れ替える" aria-label="上の動画と入れ替える">↑</button>
+          <button type="button" class="pair-move move-left" data-direction="left" title="左の動画と入れ替える" aria-label="左の動画と入れ替える">←</button>
+          <button type="button" class="pair-move move-right" data-direction="right" title="右の動画と入れ替える" aria-label="右の動画と入れ替える">→</button>
+          <button type="button" class="pair-move move-down" data-direction="down" title="下の動画と入れ替える" aria-label="下の動画と入れ替える">↓</button>
+        </div>
         <label class="pair-selector" title="並列動画に選択">
           <span aria-hidden="true">▥</span><span class="sr-only">並列動画に選択</span>
           <input class="pair-checkbox" type="checkbox" aria-label="並列動画に選択" />
