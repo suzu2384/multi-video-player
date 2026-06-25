@@ -7,7 +7,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=mobile-canvas-2" />
 </head>
 <body>
   <main>
@@ -71,7 +71,12 @@
       </label>
     </section>
 
-    <section id="videoGrid" class="video-grid multi-mode" aria-live="polite"></section>
+    <section id="videoGrid" class="video-grid multi-mode" aria-live="polite">
+      <div id="pairCanvasStage" class="pair-canvas-stage" hidden>
+        <canvas id="pairCanvas" aria-label="フレーム同期された並列動画"></canvas>
+        <div id="pairCanvasWaiting" class="pair-canvas-waiting">フレームを同期中…</div>
+      </div>
+    </section>
     <div id="multiStats" class="multi-stats" aria-label="複数動画モードの状態">
       <span id="videoCount" class="icon-status" title="追加されている動画数" aria-label="追加されている動画数">🎞 0</span>
       <span id="selectionCount" class="icon-status" title="並列動画の選択数" aria-label="並列動画の選択数">▥ 0 / 2</span>
@@ -121,6 +126,6 @@
     </article>
   </template>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=mobile-canvas-2"></script>
 </body>
 </html>

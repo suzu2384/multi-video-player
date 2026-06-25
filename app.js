@@ -24,6 +24,10 @@
   const exportProgressText = document.getElementById('exportProgressText');
   const exportCodec = document.getElementById('exportCodec');
   const exportBitrate = document.getElementById('exportBitrate');
+  const pairCanvasStage = document.getElementById('pairCanvasStage');
+  const pairCanvas = document.getElementById('pairCanvas');
+  const pairCanvasWaiting = document.getElementById('pairCanvasWaiting');
+  const pairCanvasContext = pairCanvas.getContext('2d', { alpha: false });
 
   const getViewportSize = () => {
     const viewport = window.visualViewport;
@@ -93,6 +97,10 @@
   let audioContext = null;
   let audioDestination = null;
   let columnsManuallySet = false;
+  let pairFrameAnimation = 0;
+  let pairFrameGeneration = 0;
+  let pairFrameStarted = false;
+  let pairAudioItem = null;
   const invalidatePreparedPlayback = () => {};
 
   const formatTime = (seconds) => {
@@ -109,6 +117,90 @@
     return pairReversed ? [...selected].reverse() : selected;
   };
   const getActiveItems = () => mode === 'pair' ? getPairItems() : items;
+
+
+  const restoreNormalVideoAudio = () => {
+    items.forEach(item => {
+      item.video.muted = false;
+      applyVolume(item);
+    });
+    pairAudioItem = null;
+  };
+
+  const isMobileComposite = () => isMobileLayout();
+
+  const resizeCompositeCanvas = () => {
+    if (mode === 'pair') {
+      const width = Math.min(3840, Math.max(320, Number(pairWidth.value) || 1280));
+      const height = Math.min(2160, Math.max(180, Number(pairHeight.value) || 720));
+      if (pairCanvas.width !== width) pairCanvas.width = width;
+      if (pairCanvas.height !== height) pairCanvas.height = height;
+      return;
+    }
+    const columns = Math.max(1, Math.min(getColumnLimit(), Number(columnCount.value) || 1));
+    const rows = Math.max(1, Math.ceil(items.length / columns));
+    const cellWidth = 480;
+    const cellHeight = 270;
+    pairCanvas.width = columns * cellWidth;
+    pairCanvas.height = rows * cellHeight;
+  };
+
+  const drawCompositeFrame = () => {
+    const active = getActiveItems();
+    resizeCompositeCanvas();
+    const width = pairCanvas.width;
+    const height = pairCanvas.height;
+    pairCanvasContext.fillStyle = '#000';
+    pairCanvasContext.fillRect(0, 0, width, height);
+    if (mode === 'pair' && active.length === 2) {
+      const half = Math.floor(width / 2);
+      drawCroppedVideo(pairCanvasContext, active[0], 0, 0, half, height);
+      drawCroppedVideo(pairCanvasContext, active[1], half, 0, width - half, height);
+      return;
+    }
+    const columns = Math.max(1, Math.min(getColumnLimit(), Number(columnCount.value) || 1));
+    const rows = Math.max(1, Math.ceil(active.length / columns));
+    const cellWidth = width / columns;
+    const cellHeight = height / rows;
+    active.forEach((item, index) => {
+      const col = index % columns;
+      const row = Math.floor(index / columns);
+      drawCroppedVideo(pairCanvasContext, item, col * cellWidth, row * cellHeight, cellWidth, cellHeight);
+    });
+  };
+
+  const stopPairFrameCompositor = ({ restoreAudio = true } = {}) => {
+    pairFrameGeneration += 1;
+    if (pairFrameAnimation) cancelAnimationFrame(pairFrameAnimation);
+    pairFrameAnimation = 0;
+    pairFrameStarted = false;
+    pairCanvasStage.classList.remove('frame-ready');
+    document.body.classList.remove('mobile-composite-active');
+    if (restoreAudio) restoreNormalVideoAudio();
+  };
+
+  const startPairFrameCompositor = () => {
+    stopPairFrameCompositor({ restoreAudio: false });
+    if (!isMobileComposite()) return;
+    const generation = ++pairFrameGeneration;
+    document.body.classList.add('mobile-composite-active');
+    pairCanvasStage.hidden = false;
+    pairCanvasStage.classList.add('frame-ready');
+    pairCanvasWaiting.textContent = '';
+    pairFrameStarted = true;
+    const render = () => {
+      if (generation !== pairFrameGeneration || !isMobileComposite()) return;
+      drawCompositeFrame();
+      pairFrameAnimation = requestAnimationFrame(render);
+    };
+    render();
+  };
+
+  const drawPairCanvasFrame = () => {
+    if (isMobileComposite()) drawCompositeFrame();
+  };
+
+  const resizePairCanvas = resizeCompositeCanvas;
 
   const updateResponsiveColumns = () => {
     const limit = updateColumnOptions();
@@ -169,6 +261,7 @@
   const pauseEveryVideo = () => {
     items.forEach(item => item.video.pause());
     stopSyncMonitor();
+    stopPairFrameCompositor();
   };
 
   const refreshLayout = () => {
@@ -188,6 +281,9 @@
     columnCount.disabled = isExporting;
     exportCodec.disabled = isExporting;
     exportBitrate.disabled = isExporting;
+    pairCanvasStage.hidden = !isMobileComposite();
+    document.body.classList.toggle('mobile-composite-active', isMobileComposite());
+    if (isMobileComposite()) resizePairCanvas();
 
     items.forEach(item => {
       const isSelected = item.pairCheckbox.checked;
@@ -215,6 +311,8 @@
     videoGrid.style.setProperty('--pair-width', `${width}px`);
     videoGrid.style.setProperty('--pair-height', `${height}px`);
     videoGrid.style.setProperty('--pair-ratio', String(height / width));
+    resizePairCanvas();
+    if (mode === 'pair') drawPairCanvasFrame(getPairItems());
     fitPairToViewport();
   };
 
@@ -232,6 +330,7 @@
 
   const applyVolume = (item) => {
     item.video.volume = Math.min(1, Number(masterVolume.value) * Number(item.volume.value));
+    if (mode === 'pair' && pairAudioItem) item.video.muted = !pairFrameStarted;
   };
 
   const getOffset = (item) => Math.max(0, Number(item.offset.value) || 0);
@@ -319,8 +418,10 @@
 
     pauseEveryVideo();
     mode = nextMode;
+    if (mode === 'multi') restoreNormalVideoAudio();
     refreshLayout();
-    setStatus(mode === 'pair' ? '選択した2本を並列表示しました。再生すると同期します。' : '');
+    if (isMobileComposite()) { drawCompositeFrame(); document.body.classList.add('mobile-composite-active'); }
+    setStatus('');
   };
 
   const VIDEO_FILE_PATTERN = /\.(mp4|m4v|mov|webm|ogv|ogg|avi|mkv)$/i;
@@ -436,7 +537,7 @@
     });
 
     [cropZoom, cropX, cropY].forEach(control => {
-      control.addEventListener('input', () => applyCrop(item));
+      control.addEventListener('input', () => { applyCrop(item); if (isMobileComposite()) drawCompositeFrame(); });
     });
     resetZoom.addEventListener('click', () => {
       cropZoom.value = '1';
@@ -523,6 +624,8 @@
     resetPlaybackRates(active);
     startingPlayback = true;
 
+    if (isMobileComposite()) startPairFrameCompositor();
+
     const playPromises = active.map(item => {
       try {
         const result = item.video.play();
@@ -537,6 +640,8 @@
         syncToLogicalTime(logicalStart, active);
         startSyncMonitor();
         runStartupSyncBurst(active);
+      } else {
+        stopPairFrameCompositor();
       }
     }).finally(() => {
       startingPlayback = false;
@@ -546,12 +651,15 @@
   const pauseActive = () => {
     getActiveItems().forEach(item => item.video.pause());
     stopSyncMonitor();
+    stopPairFrameCompositor();
     setStatus('一時停止しました。');
   };
 
   const restartActive = () => {
     invalidatePreparedPlayback();
+    stopPairFrameCompositor();
     syncToLogicalTime(0);
+    if (mode === 'pair') window.setTimeout(() => drawPairCanvasFrame(getPairItems()), 80);
     setStatus('表示中の動画を開始位置へ戻しました。');
   };
 
@@ -776,6 +884,7 @@
   document.getElementById('syncAll').addEventListener('click', () => {
     invalidatePreparedPlayback();
     syncActive();
+    if (mode === 'pair') window.setTimeout(() => drawPairCanvasFrame(getPairItems()), 80);
     setStatus('表示中の動画の再生位置をそろえました。');
   });
   document.getElementById('removeAll').addEventListener('click', () => {
@@ -826,6 +935,7 @@
     responsiveUpdateTimer = setTimeout(() => {
       updateColumnLayout();
       fitPairToViewport();
+      if (mode === 'pair') { resizePairCanvas(); drawPairCanvasFrame(getPairItems()); }
     }, 180);
   };
 
@@ -842,3 +952,4 @@
   updateColumnLayout();
   refreshLayout();
 })();
+

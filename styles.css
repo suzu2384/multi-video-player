@@ -900,3 +900,80 @@ body:not(.pair-view) .export-option { display: none; }
 @supports (-webkit-touch-callout: none) {
   .video-frame video { -webkit-transform: translateZ(0); }
 }
+
+
+/* フレーム同期型リアルタイム合成 */
+.pair-canvas-stage {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #000;
+}
+.pair-canvas-stage[hidden] { display: none !important; }
+.pair-canvas-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #000;
+}
+.pair-canvas-waiting {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #d9dde6;
+  background: rgba(0,0,0,.44);
+  font-size: 13px;
+  pointer-events: none;
+}
+.pair-canvas-stage.frame-ready .pair-canvas-waiting { display: none; }
+/* Canvas合成は mobile-composite-active のときだけ有効。PCでは通常のvideoを表示する。 */
+body.pair-view:not(.mobile-composite-active) .video-grid.pair-mode .pair-canvas-stage {
+  display: none !important;
+}
+body.pair-view:not(.mobile-composite-active) .video-grid.pair-mode .video-frame {
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* スマホでは複数・並列とも映像を1枚のCanvasへ合成して表示する。PCは従来のvideo表示。 */
+@media (max-width: 760px), (pointer: coarse) {
+  body.mobile-composite-active .pair-canvas-stage {
+    display: block !important;
+    grid-column: 1 / -1;
+    width: min(100%, var(--pair-display-width, 100%));
+    max-height: calc(100svh - var(--toolbar-height, 64px) - 190px);
+    margin: 0 auto;
+    background: #000;
+    overflow: hidden;
+    order: -10;
+  }
+  body.mobile-composite-active .pair-canvas-stage canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: inherit;
+    object-fit: contain;
+  }
+  body.mobile-composite-active .pair-canvas-waiting { display: none !important; }
+  body.mobile-composite-active .video-card .video-frame video {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  body.mobile-composite-active .video-card .video-frame {
+    min-height: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+  body.mobile-composite-active .video-card .pair-selector {
+    position: relative;
+    display: inline-flex;
+    inset: auto;
+    margin: 4px;
+  }
+}
