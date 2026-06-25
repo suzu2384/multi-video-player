@@ -446,56 +446,98 @@
       resolve();
       return;
     }
-    video.addEventListener('canplay', resolve, { once: true });
+    const finish = () => resolve();
+    video.addEventListener('canplay', finish, { once: true });
+    video.addEventListener('loadeddata', finish, { once: true });
   });
 
-  const playActive = () => {
+  const waitForEventOrTimeout = (target, eventName, timeoutMs = 1800) => new Promise(resolve => {
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      target.removeEventListener(eventName, finish);
+      resolve();
+    };
+    const timer = window.setTimeout(finish, timeoutMs);
+    target.addEventListener(eventName, finish, { once: true });
+  });
+
+  let startingPlayback = false;
+
+  const playActive = async () => {
+    if (startingPlayback) return;
+
     const active = getActiveItems();
-    if (active.length === 0) {
-      setStatus('先に動画を追加してください。');
-      return;
-    }
-    if (mode === 'pair' && active.length !== 2) {
-      return;
-    }
+    if (active.length === 0) return;
+    if (mode === 'pair' && active.length !== 2) return;
+
+    startingPlayback = true;
+    const playButton = document.getElementById('playAll');
+    if (playButton) playButton.disabled = true;
 
     pauseEveryVideo();
+    stopSyncMonitor();
 
-    // 全動画を同じ論理時刻へそろえてから、同じタップ処理内で一斉に再生要求する。
     const logicalStart = Math.max(0, getLogicalTime(active[0]));
-    syncToLogicalTime(logicalStart, active);
     resetPlaybackRates(active);
+    syncToLogicalTime(logicalStart, active);
 
-    // iOS Safariでは、タップイベント内でplay()を直接呼ばないと
-    // ユーザー操作による再生とみなされない。ready待ちやawaitを先に挟まない。
-    const playPromises = active.map(item => {
-      const video = item.video;
-      try {
-        const result = video.play();
-        return result && typeof result.then === 'function'
-          ? result
-          : Promise.resolve();
-      } catch (error) {
-        return Promise.reject(error);
-      }
-    });
+    try {
+      // 1段目: タップイベントの権限が有効な間に全動画へplay()を発行し、
+      // iPhone側のデコーダーを全本分立ち上げる。
+      const warmupPromises = active.map(item => {
+        const video = item.video;
+        try {
+          const result = video.play();
+          return result && typeof result.then === 'function' ? result : Promise.resolve();
+        } catch (error) {
+          return Promise.reject(error);
+        }
+      });
 
-    Promise.allSettled(playPromises).then(results => {
-      const failed = results.filter(result => result.status === 'rejected');
-      if (failed.length === 0) {
-        // iPhoneではデコーダー起動の差で最初だけずれやすいので、開始直後は高頻度で補正する。
-        syncToLogicalTime(logicalStart, active);
-        startSyncMonitor();
-        runStartupSyncBurst(active);
-        setStatus('');
-        return;
+      const warmupResults = await Promise.allSettled(warmupPromises);
+      if (warmupResults.every(result => result.status === 'rejected')) {
+        throw warmupResults[0].reason;
       }
 
-      console.error('再生できなかった動画:', failed.map(result => result.reason));
-      // 一部だけ再生できた場合も同期監視を開始する。
+      // 各動画が実際にplayingへ到達するまで待つ。ここで起動時間の差を吸収する。
+      await Promise.all(active.map(item =>
+        item.video.paused
+          ? waitForEventOrTimeout(item.video, 'playing', 2200)
+          : Promise.resolve()
+      ));
+
+      active.forEach(item => item.video.pause());
+
+      // 2段目: 全動画をもう一度同じ論理時刻へ戻し、seek完了をそろえる。
+      const seekWaits = active.map(item => {
+        const target = clampVideoTime(item, logicalStart + getOffset(item));
+        if (Math.abs(item.video.currentTime - target) < 0.015) return Promise.resolve();
+        item.video.currentTime = target;
+        return waitForEventOrTimeout(item.video, 'seeked', 1800);
+      });
+      await Promise.all(seekWaits);
+
+      // seek後のフレームが用意されるまで待ってから、本再生を同時要求する。
+      await Promise.all(active.map(item => waitUntilReady(item.video)));
+      const finalPlayResults = await Promise.allSettled(active.map(item => item.video.play()));
+      const failed = finalPlayResults.filter(result => result.status === 'rejected');
+      if (failed.length === active.length) throw failed[0].reason;
+
+      // 本再生直後に再度同一時刻へ補正する。Safariで先に走った動画をここで戻す。
+      syncToLogicalTime(logicalStart, active);
+      startSyncMonitor();
+      runStartupSyncBurst(active);
+      setStatus('');
+    } catch (error) {
+      console.error('同期再生の開始に失敗しました:', error);
       if (active.some(item => !item.video.paused)) startSyncMonitor();
-      setStatus('再生できない動画があります。動画上の再生ボタンも試してください。');
-    });
+    } finally {
+      startingPlayback = false;
+      if (playButton) playButton.disabled = false;
+    }
   };
 
   const pauseActive = () => {
