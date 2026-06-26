@@ -13,6 +13,47 @@
 
   if (!columnCount || !videoGrid) return;
 
+  const foldStyle = document.createElement('style');
+  foldStyle.textContent = `
+    .video-grid .pair-extra-controls {
+      display: block !important;
+      margin-top: 8px;
+      border: 1px solid #3b4554;
+      border-radius: 8px;
+      background: #14181f;
+      overflow: hidden;
+    }
+
+    .video-grid .pair-extra-controls > summary {
+      display: list-item !important;
+      padding: 8px 10px;
+      color: #d4dae3;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .video-grid .pair-extra-controls[open] > summary {
+      border-bottom: 1px solid #303641;
+    }
+
+    .video-grid .pair-extra-controls > .video-controls,
+    .video-grid .pair-extra-controls > .crop-controls {
+      margin: 0 !important;
+      padding: 8px 10px !important;
+    }
+
+    .video-grid .pair-extra-controls > .crop-controls {
+      border-top: 1px solid #303641 !important;
+    }
+
+    .video-grid .crop-controls .section-icon {
+      display: none !important;
+    }
+  `;
+  document.head.appendChild(foldStyle);
+
   const showVersion = () => {
     const versionLabel = document.createElement('div');
     versionLabel.textContent = `v${APP_VERSION}`;
