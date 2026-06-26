@@ -4,9 +4,38 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>複数動画同期プレーヤー</title>
-  <link rel="stylesheet" href="styles.css?v=12" />
+  <script>
+    (() => {
+      const params = new URLSearchParams(location.search);
+      const cacheKey = params.get('dev') || 'release';
+      const stylesheet = document.createElement('link');
+      stylesheet.rel = 'stylesheet';
+      stylesheet.href = `styles.css?v=${encodeURIComponent(cacheKey)}`;
+      document.head.appendChild(stylesheet);
+    })();
+  </script>
+  <style>
+    #devRefreshButton {
+      position: fixed;
+      left: 6px;
+      top: 6px;
+      z-index: 10000;
+      width: 34px;
+      height: 34px;
+      padding: 0;
+      border: 1px solid #738096;
+      border-radius: 50%;
+      background: rgba(20,24,31,.9);
+      color: #fff;
+      font-size: 20px;
+      line-height: 1;
+      box-shadow: 0 2px 10px rgba(0,0,0,.35);
+    }
+  </style>
 </head>
 <body>
+  <button id="devRefreshButton" type="button" title="開発用：キャッシュを使わず再読み込み" aria-label="キャッシュを使わず再読み込み">↻</button>
+
   <main>
     <section id="pairSettings" class="pair-settings" aria-label="並列表示設定">
       <span class="section-icon" title="並列動画の表示サイズ" aria-label="並列動画の表示サイズ">▣</span>
@@ -124,8 +153,28 @@
     </article>
   </template>
 
-  <script src="app.js?v=12"></script>
-  <script src="mobile-columns.js?v=12"></script>
-  <script src="pair-fix.js?v=12"></script>
+  <script>
+    (() => {
+      const params = new URLSearchParams(location.search);
+      const cacheKey = params.get('dev') || 'release';
+      const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
+
+      const loadNext = index => {
+        if (index >= files.length) return;
+        const script = document.createElement('script');
+        script.src = `${files[index]}?v=${encodeURIComponent(cacheKey)}`;
+        script.onload = () => loadNext(index + 1);
+        document.body.appendChild(script);
+      };
+
+      document.getElementById('devRefreshButton').addEventListener('click', () => {
+        const url = new URL(location.href);
+        url.searchParams.set('dev', String(Date.now()));
+        location.replace(url.href);
+      });
+
+      loadNext(0);
+    })();
+  </script>
 </body>
 </html>
