@@ -131,6 +131,7 @@
   let slots = [];
   let scheduled = false;
   let swapLayer = null;
+  let columnsManuallySet = false;
 
   const isTouchDevice = () => navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
   const isMobileLayout = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '')
@@ -138,7 +139,7 @@
   const getMaxColumns = () => !isMobileLayout() ? 6 : (window.innerHeight >= window.innerWidth ? 2 : 3);
 
   const forceAutomaticColumns = () => {
-    if (!columnCount || !grid.classList.contains('multi-mode')) return;
+    if (columnsManuallySet || !columnCount || !grid.classList.contains('multi-mode')) return;
     const count = grid.querySelectorAll('.video-card').length;
     if (!count) return;
     const max = getMaxColumns();
@@ -327,6 +328,8 @@
     } catch { label.textContent = 'version unknown'; }
   };
 
+  columnCount?.addEventListener('input', () => { columnsManuallySet = true; });
+  columnCount?.addEventListener('change', () => { columnsManuallySet = true; });
   new MutationObserver(schedule).observe(grid,{childList:true,subtree:true,attributes:true,attributeFilter:['class','disabled']});
   window.addEventListener('resize',schedule);
   window.addEventListener('orientationchange',schedule);
