@@ -6,6 +6,10 @@
 
   const style = document.createElement('style');
   style.textContent = `
+    #videoGrid.pair-mode .pair-move-controls {
+      display: none !important;
+    }
+
     .controls-drawer {
       position: relative;
       margin-top: 8px;
@@ -264,8 +268,19 @@
     return swapLayer;
   };
 
+  const getMoveDirection = (from, to) => {
+    if (to === from + 1) return 'right';
+    if (to === from - 1) return 'left';
+    if (to === from + 2) return 'down';
+    if (to === from - 2) return 'up';
+    return null;
+  };
+
   const addSwap = (from,to,symbol,left,top) => {
-    if (!slots[from] && !slots[to]) return;
+    const source = slots[from];
+    const target = slots[to];
+    if (!source || !target) return;
+
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = symbol;
@@ -273,9 +288,17 @@
     button.addEventListener('click',event => {
       event.preventDefault();
       event.stopPropagation();
-      [slots[from],slots[to]] = [slots[to],slots[from]];
-      applySlotClasses(knownCards);
-      renderSwaps();
+
+      const direction = getMoveDirection(from, to);
+      const nativeButton = direction
+        ? source.querySelector(`.pair-move[data-direction="${direction}"]`)
+        : null;
+      if (!nativeButton || nativeButton.disabled) return;
+
+      knownCards = [];
+      slots = [];
+      nativeButton.click();
+      schedule();
     });
     getSwapLayer().appendChild(button);
   };
@@ -298,7 +321,6 @@
     scheduled = false;
     ensureDrawersAndSeek();
     grid.style.position = 'relative';
-    grid.querySelectorAll('.pair-move-controls').forEach(el => { el.style.display = 'none'; });
     if (grid.classList.contains('multi-mode')) forceAutomaticColumns();
     const cards = getSelectedCards();
     if (!hasSameCards(cards)) initializeSlots(cards);
