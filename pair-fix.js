@@ -268,12 +268,20 @@
     return swapLayer;
   };
 
-  const getMoveDirection = (from, to) => {
-    if (to === from + 1) return 'right';
-    if (to === from - 1) return 'left';
-    if (to === from + 2) return 'down';
-    if (to === from - 2) return 'up';
-    return null;
+  const rebuildSelectionOrder = orderedCards => {
+    const selectedCards = getSelectedCards();
+    selectedCards.forEach(card => {
+      const checkbox = card.querySelector('.pair-checkbox');
+      if (!checkbox) return;
+      checkbox.checked = false;
+      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    orderedCards.forEach(card => {
+      const checkbox = card.querySelector('.pair-checkbox');
+      if (!checkbox) return;
+      checkbox.checked = true;
+      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+    });
   };
 
   const addSwap = (from,to,symbol,left,top) => {
@@ -289,15 +297,11 @@
       event.preventDefault();
       event.stopPropagation();
 
-      const direction = getMoveDirection(from, to);
-      const nativeButton = direction
-        ? source.querySelector(`.pair-move[data-direction="${direction}"]`)
-        : null;
-      if (!nativeButton || nativeButton.disabled) return;
-
+      const nextOrder = slots.filter(Boolean);
+      [nextOrder[from], nextOrder[to]] = [nextOrder[to], nextOrder[from]];
       knownCards = [];
       slots = [];
-      nativeButton.click();
+      rebuildSelectionOrder(nextOrder);
       schedule();
     });
     getSwapLayer().appendChild(button);
