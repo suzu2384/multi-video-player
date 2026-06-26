@@ -10,6 +10,7 @@
   const columnCount = document.getElementById('columnCount');
   const videoGrid = document.getElementById('videoGrid');
   const fileInput = document.getElementById('fileInput');
+  const dropZone = document.getElementById('dropZone');
 
   if (!columnCount || !videoGrid) return;
 
@@ -49,6 +50,10 @@
     }
 
     .video-grid .crop-controls .section-icon {
+      display: none !important;
+    }
+
+    .drop-zone.mobile-hidden {
       display: none !important;
     }
 
@@ -157,17 +162,19 @@
   addButton.addEventListener('click', () => fileInput?.click());
   document.body.appendChild(addButton);
 
-  const refreshAddButton = () => {
+  const refreshMobileOnlyUi = () => {
+    const mobile = isMobileLayout();
     addButton.classList.toggle(
       'visible',
-      Boolean(fileInput) && isMobileLayout() && videoGrid.classList.contains('multi-mode')
+      Boolean(fileInput) && mobile && videoGrid.classList.contains('multi-mode')
     );
+    dropZone?.classList.toggle('mobile-hidden', mobile);
   };
 
   const refreshMobileLayout = () => {
     clampColumns();
     fixTwoVideoPairLayout();
-    refreshAddButton();
+    refreshMobileOnlyUi();
   };
 
   const scheduleClamp = () => {
