@@ -2,6 +2,43 @@
   const grid = document.getElementById('videoGrid');
   if (!grid) return;
 
+  const mobilePanelStyle = document.createElement('style');
+  mobilePanelStyle.textContent = `
+    @media (max-width: 920px) {
+      body.pair-view .video-grid.pair-mode .video-controls {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+      }
+
+      body.pair-view .video-grid.pair-mode .video-controls label {
+        display: grid !important;
+        grid-template-columns: 30px minmax(0, 1fr) auto !important;
+        align-items: center !important;
+        width: 100% !important;
+      }
+
+      body.pair-view .video-grid.pair-mode .crop-controls {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1fr) !important;
+        gap: 8px !important;
+      }
+
+      body.pair-view .video-grid.pair-mode .crop-controls .section-icon {
+        grid-column: auto !important;
+      }
+
+      body.pair-view .video-grid.pair-mode .crop-controls .icon-field {
+        display: grid !important;
+        grid-template-columns: 30px minmax(0, 1fr) 48px 28px !important;
+        align-items: center !important;
+        width: 100% !important;
+      }
+    }
+  `;
+  document.head.appendChild(mobilePanelStyle);
+
   const POSITION_CLASSES = [
     'pair-top-left',
     'pair-top-right',
