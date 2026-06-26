@@ -51,6 +51,31 @@
     .video-grid .crop-controls .section-icon {
       display: none !important;
     }
+
+    .mobile-add-video {
+      position: fixed;
+      left: 14px;
+      bottom: calc(var(--toolbar-height, 138px) + 14px);
+      z-index: 60;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 54px;
+      height: 54px;
+      padding: 0;
+      border: 1px solid #6ea8ff;
+      border-radius: 50%;
+      background: #2f6feb;
+      color: #fff;
+      font-size: 32px;
+      font-weight: 400;
+      line-height: 1;
+      box-shadow: 0 6px 20px rgba(0,0,0,.42);
+    }
+
+    .mobile-add-video.visible {
+      display: inline-flex;
+    }
   `;
   document.head.appendChild(foldStyle);
 
@@ -123,9 +148,26 @@
     });
   };
 
+  const addButton = document.createElement('button');
+  addButton.type = 'button';
+  addButton.className = 'mobile-add-video';
+  addButton.textContent = '+';
+  addButton.title = '動画を追加';
+  addButton.setAttribute('aria-label', '動画を追加');
+  addButton.addEventListener('click', () => fileInput?.click());
+  document.body.appendChild(addButton);
+
+  const refreshAddButton = () => {
+    addButton.classList.toggle(
+      'visible',
+      Boolean(fileInput) && isMobileLayout() && videoGrid.classList.contains('multi-mode')
+    );
+  };
+
   const refreshMobileLayout = () => {
     clampColumns();
     fixTwoVideoPairLayout();
+    refreshAddButton();
   };
 
   const scheduleClamp = () => {
@@ -143,11 +185,16 @@
   window.addEventListener('pageshow', scheduleClamp);
   document.addEventListener('visibilitychange', scheduleClamp);
   document.addEventListener('click', event => {
-    if (event.target.closest('#pairModeButton, .pair-move')) scheduleClamp();
+    if (event.target.closest('#pairModeButton, #multiModeButton, .pair-move')) scheduleClamp();
   });
   if (fileInput) fileInput.addEventListener('change', scheduleClamp);
 
-  new MutationObserver(scheduleClamp).observe(videoGrid, { childList: true, subtree: false });
+  new MutationObserver(scheduleClamp).observe(videoGrid, {
+    childList: true,
+    subtree: false,
+    attributes: true,
+    attributeFilter: ['class']
+  });
   showVersion();
   scheduleClamp();
 })();
