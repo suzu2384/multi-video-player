@@ -1,18 +1,12 @@
 (() => {
   const grid = document.getElementById('videoGrid');
+  const columnCount = document.getElementById('columnCount');
+  const fileInput = document.getElementById('fileInput');
   if (!grid) return;
 
-  const mobilePanelStyle = document.createElement('style');
-  mobilePanelStyle.textContent = `
-    .video-grid:not(.pair-mode) .pair-extra-controls {
-      display: contents;
-    }
-
-    .video-grid:not(.pair-mode) .pair-extra-controls > summary {
-      display: none;
-    }
-
-    body.pair-view .video-grid.pair-mode .pair-extra-controls {
+  const supportStyle = document.createElement('style');
+  supportStyle.textContent = `
+    .controls-drawer {
       margin-top: 8px;
       border: 1px solid #3b4554;
       border-radius: 8px;
@@ -20,55 +14,93 @@
       overflow: hidden;
     }
 
-    body.pair-view .video-grid.pair-mode .pair-extra-controls > summary {
+    .controls-drawer-toggle {
+      width: 100%;
       padding: 8px 10px;
+      border: 0;
+      background: transparent;
       color: #d4dae3;
+      text-align: left;
       font-size: 13px;
       font-weight: 700;
       cursor: pointer;
-      user-select: none;
     }
 
-    body.pair-view .video-grid.pair-mode .pair-extra-controls[open] > summary {
-      border-bottom: 1px solid #303641;
+    .controls-drawer-toggle::after {
+      content: '▼';
+      float: right;
+      font-size: 10px;
+      transition: transform .16s ease;
     }
 
-    body.pair-view .video-grid.pair-mode .pair-extra-controls > .video-controls,
-    body.pair-view .video-grid.pair-mode .pair-extra-controls > .crop-controls {
+    .controls-drawer.open .controls-drawer-toggle::after {
+      transform: rotate(180deg);
+    }
+
+    .controls-drawer-content {
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height .2s ease, opacity .16s ease;
+    }
+
+    .controls-drawer.open .controls-drawer-content {
+      max-height: 720px;
+      opacity: 1;
+      border-top: 1px solid #303641;
+    }
+
+    .controls-drawer-content > .video-controls,
+    .controls-drawer-content > .crop-controls {
       margin: 0 !important;
       padding: 8px 10px !important;
     }
 
-    body.pair-view .video-grid.pair-mode .pair-extra-controls > .crop-controls {
+    .controls-drawer-content > .crop-controls {
       border-top: 1px solid #303641 !important;
     }
 
-    body.pair-view .video-grid.pair-mode .crop-controls .section-icon {
+    .video-grid .crop-controls .section-icon {
       display: none !important;
     }
 
+    body.pair-view.drawer-expanded,
+    body.pair-view.drawer-expanded main {
+      overflow: auto !important;
+      height: auto !important;
+      min-height: 100vh;
+    }
+
+    body.pair-view.drawer-expanded .video-grid.pair-mode,
+    body.pair-view.drawer-expanded .video-grid.pair-mode .video-card,
+    body.pair-view.drawer-expanded .video-grid.pair-mode .video-info {
+      height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+    }
+
     @media (max-width: 920px) {
-      body.pair-view .video-grid.pair-mode .video-controls {
+      .video-grid .controls-drawer-content .video-controls {
         display: flex !important;
         flex-direction: column !important;
         align-items: stretch !important;
         gap: 8px !important;
       }
 
-      body.pair-view .video-grid.pair-mode .video-controls label {
+      .video-grid .controls-drawer-content .video-controls label {
         display: grid !important;
         grid-template-columns: 30px minmax(0, 1fr) auto !important;
         align-items: center !important;
         width: 100% !important;
       }
 
-      body.pair-view .video-grid.pair-mode .crop-controls {
+      .video-grid .controls-drawer-content .crop-controls {
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) !important;
         gap: 8px !important;
       }
 
-      body.pair-view .video-grid.pair-mode .crop-controls .icon-field {
+      .video-grid .controls-drawer-content .crop-controls .icon-field {
         display: grid !important;
         grid-template-columns: 30px minmax(0, 1fr) 48px 28px !important;
         align-items: center !important;
@@ -76,7 +108,7 @@
       }
     }
   `;
-  document.head.appendChild(mobilePanelStyle);
+  document.head.appendChild(supportStyle);
 
   const POSITION_CLASSES = [
     'pair-top-left',
@@ -90,29 +122,92 @@
   let scheduled = false;
   let swapLayer = null;
 
-  const getSelectedCards = () => [...grid.querySelectorAll('.video-card.pair-selected:not(.hidden-in-pair)')];
+  const isTouchDevice = () => navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+  const isMobileLayout = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '')
+    || (isTouchDevice() && Math.max(window.innerWidth, window.innerHeight) <= 1024);
 
-  const ensureFoldableControls = () => {
+  const getMaxColumns = () => {
+    if (!isMobileLayout()) return 6;
+    return window.innerHeight >= window.innerWidth ? 2 : 3;
+  };
+
+  const forceAutomaticColumns = () => {
+    if (!columnCount || !grid.classList.contains('multi-mode')) return;
+    const videoCount = grid.querySelectorAll('.video-card').length;
+    if (videoCount === 0) return;
+
+    const maxColumns = getMaxColumns();
+    const desiredColumns = Math.min(maxColumns, Math.max(1, videoCount));
+    const optionExists = [...columnCount.options].some(option => Number(option.value) === desiredColumns);
+
+    if (!optionExists) {
+      columnCount.replaceChildren();
+      for (let count = 1; count <= maxColumns; count += 1) {
+        const option = document.createElement('option');
+        option.value = String(count);
+        option.textContent = String(count);
+        columnCount.appendChild(option);
+      }
+    }
+
+    columnCount.value = String(desiredColumns);
+    grid.style.setProperty('--multi-columns', String(desiredColumns));
+  };
+
+  const ensureControlDrawers = () => {
     grid.querySelectorAll('.video-card').forEach(card => {
       const info = card.querySelector('.video-info');
-      const videoControls = info?.querySelector(':scope > .video-controls');
-      const cropControls = info?.querySelector(':scope > .crop-controls');
-      const timeRow = info?.querySelector(':scope > .time-row');
-      if (!info || !videoControls || !cropControls || !timeRow) return;
+      if (!info) return;
 
-      let details = info.querySelector(':scope > .pair-extra-controls');
-      if (!details) {
-        details = document.createElement('details');
-        details.className = 'pair-extra-controls';
-        const summary = document.createElement('summary');
-        summary.textContent = '操作';
-        details.appendChild(summary);
-        info.insertBefore(details, timeRow);
+      const oldDetails = info.querySelector(':scope > .pair-extra-controls');
+      let videoControls = info.querySelector(':scope > .video-controls');
+      let cropControls = info.querySelector(':scope > .crop-controls');
+      const timeRow = info.querySelector(':scope > .time-row');
+
+      if (oldDetails) {
+        videoControls = oldDetails.querySelector(':scope > .video-controls') || videoControls;
+        cropControls = oldDetails.querySelector(':scope > .crop-controls') || cropControls;
       }
 
-      details.append(videoControls, cropControls);
+      if (!videoControls || !cropControls || !timeRow) return;
+
+      let drawer = info.querySelector(':scope > .controls-drawer');
+      if (!drawer) {
+        drawer = document.createElement('div');
+        drawer.className = 'controls-drawer';
+
+        const toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'controls-drawer-toggle';
+        toggle.textContent = '操作';
+        toggle.setAttribute('aria-expanded', 'false');
+
+        const content = document.createElement('div');
+        content.className = 'controls-drawer-content';
+
+        toggle.addEventListener('click', event => {
+          event.preventDefault();
+          event.stopPropagation();
+          const open = drawer.classList.toggle('open');
+          card.classList.toggle('drawer-open', open);
+          toggle.setAttribute('aria-expanded', String(open));
+          document.body.classList.toggle(
+            'drawer-expanded',
+            Boolean(grid.querySelector('.video-card.drawer-open'))
+          );
+          window.requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
+        });
+
+        drawer.append(toggle, content);
+        info.insertBefore(drawer, timeRow);
+      }
+
+      drawer.querySelector('.controls-drawer-content').append(videoControls, cropControls);
+      oldDetails?.remove();
     });
   };
+
+  const getSelectedCards = () => [...grid.querySelectorAll('.video-card.pair-selected:not(.hidden-in-pair)')];
 
   const hasSameCards = cards => (
     cards.length === knownCards.length && cards.every(card => knownCards.includes(card))
@@ -244,11 +339,13 @@
   const refresh = () => {
     scheduled = false;
 
-    ensureFoldableControls();
+    ensureControlDrawers();
     grid.style.position = 'relative';
     grid.querySelectorAll('.pair-move-controls').forEach(controls => {
       controls.style.display = 'none';
     });
+
+    if (grid.classList.contains('multi-mode')) forceAutomaticColumns();
 
     const cards = getSelectedCards();
     if (!hasSameCards(cards)) initializeSlots(cards);
@@ -306,6 +403,11 @@
   });
   window.addEventListener('resize', scheduleRefresh);
   window.addEventListener('orientationchange', scheduleRefresh);
+  fileInput?.addEventListener('change', () => {
+    window.setTimeout(forceAutomaticColumns, 0);
+    window.setTimeout(forceAutomaticColumns, 150);
+    window.setTimeout(forceAutomaticColumns, 500);
+  });
 
   scheduleRefresh();
   showVersion();
