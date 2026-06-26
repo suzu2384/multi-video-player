@@ -2,6 +2,10 @@
   const grid = document.getElementById('videoGrid');
   if (!grid) return;
 
+  const setStyle = (element, property, value) => {
+    if (element.style[property] !== value) element.style[property] = value;
+  };
+
   const fix = () => {
     if (grid.classList.contains('pair-count-2')) {
       grid.querySelectorAll('.pair-left,.pair-right').forEach(card => {
@@ -9,8 +13,23 @@
       });
     }
 
-    grid.querySelectorAll('.pair-move').forEach(button => {
-      button.style.display = button.disabled ? 'none' : '';
+    grid.querySelectorAll('.pair-move-controls').forEach(controls => {
+      const buttons = [...controls.querySelectorAll('.pair-move')];
+      buttons.forEach(button => {
+        setStyle(button, 'display', button.disabled ? 'none' : '');
+        if (!button.disabled) {
+          setStyle(button, 'gridColumn', 'auto');
+          setStyle(button, 'gridRow', 'auto');
+        }
+      });
+
+      const visibleCount = buttons.filter(button => !button.disabled).length;
+      setStyle(controls, 'display', grid.classList.contains('pair-mode') && visibleCount > 0 ? 'flex' : 'none');
+      setStyle(controls, 'width', 'fit-content');
+      setStyle(controls, 'height', 'fit-content');
+      setStyle(controls, 'gridTemplateColumns', 'none');
+      setStyle(controls, 'gridTemplateRows', 'none');
+      setStyle(controls, 'alignItems', 'center');
     });
   };
 
