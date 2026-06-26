@@ -174,8 +174,27 @@
       const cacheKey = params.get('dev') || 'release';
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
 
+      const configureExportCodec = () => {
+        const select = document.getElementById('exportCodec');
+        if (!select) return;
+
+        [...select.options]
+          .filter(option => option.value === '' || option.textContent.trim() === '自動')
+          .forEach(option => option.remove());
+
+        const preferredValues = [
+          'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+          'video/mp4;codecs=avc1.42E01E',
+          'video/mp4'
+        ];
+        const preferred = preferredValues.find(value => [...select.options].some(option => option.value === value));
+        if (preferred) select.value = preferred;
+        else if (select.options.length > 0) select.selectedIndex = 0;
+      };
+
       const loadNext = index => {
         if (index >= files.length) {
+          configureExportCodec();
           document.documentElement.classList.add('mobile-ui-ready');
           return;
         }
