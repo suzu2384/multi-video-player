@@ -1,6 +1,7 @@
 (() => {
   'use strict';
 
+  const APP_VERSION = '2026.06.26.1';
   const DESKTOP_MAX_COLUMNS = 6;
   const MOBILE_PORTRAIT_MAX_COLUMNS = 2;
   const MOBILE_LANDSCAPE_MAX_COLUMNS = 3;
@@ -11,6 +12,26 @@
   const fileInput = document.getElementById('fileInput');
 
   if (!columnCount || !videoGrid) return;
+
+  const showVersion = () => {
+    const versionLabel = document.createElement('div');
+    versionLabel.textContent = `v${APP_VERSION}`;
+    versionLabel.title = '読み込まれているアプリのバージョン';
+    Object.assign(versionLabel.style, {
+      position: 'fixed',
+      right: '6px',
+      bottom: '4px',
+      zIndex: '9999',
+      padding: '2px 5px',
+      borderRadius: '4px',
+      background: 'rgba(0, 0, 0, 0.55)',
+      color: 'rgba(255, 255, 255, 0.75)',
+      fontSize: '10px',
+      lineHeight: '1.2',
+      pointerEvents: 'none'
+    });
+    document.body.appendChild(versionLabel);
+  };
 
   const isTouchDevice = () => navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
   const isMobileLayout = () => {
@@ -79,5 +100,6 @@
   if (fileInput) fileInput.addEventListener('change', scheduleClamp);
 
   new MutationObserver(scheduleClamp).observe(videoGrid, { childList: true, subtree: false });
+  showVersion();
   scheduleClamp();
 })();
