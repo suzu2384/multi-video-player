@@ -6,6 +6,12 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
+      const userAgent = navigator.userAgent || '';
+      const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
+      const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
+        || (touch && Math.max(window.innerWidth, window.innerHeight) <= 1024);
+      if (mobile) document.documentElement.classList.add('mobile-boot');
+
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || 'release';
       const stylesheet = document.createElement('link');
@@ -15,6 +21,15 @@
     })();
   </script>
   <style>
+    html.mobile-boot #dropZone {
+      display: none !important;
+    }
+
+    html.mobile-boot:not(.mobile-ui-ready) .mobile-add-video {
+      display: none !important;
+      visibility: hidden !important;
+    }
+
     #devRefreshButton {
       position: fixed;
       left: 6px;
@@ -160,7 +175,10 @@
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
 
       const loadNext = index => {
-        if (index >= files.length) return;
+        if (index >= files.length) {
+          document.documentElement.classList.add('mobile-ui-ready');
+          return;
+        }
         const script = document.createElement('script');
         script.src = `${files[index]}?v=${encodeURIComponent(cacheKey)}`;
         script.onload = () => loadNext(index + 1);
