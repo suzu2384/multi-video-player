@@ -68,13 +68,31 @@
       inset: 52px 12px 52px 12px !important;
       z-index: 45 !important;
       display: flex !important;
+      flex-direction: column !important;
       align-items: center !important;
       justify-content: center !important;
+      text-align: center !important;
       min-height: 0 !important;
       margin: 0 !important;
       opacity: 1;
       pointer-events: auto;
       transition: opacity .12s ease, background .12s ease, border-color .12s ease;
+    }
+
+    body.desktop-multi-drop #dropZone .drop-instruction {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      width: 100% !important;
+      text-align: center !important;
+    }
+
+    body.desktop-multi-drop #dropZone .drop-instruction strong,
+    body.desktop-multi-drop #dropZone .drop-instruction span {
+      display: block !important;
+      width: 100% !important;
+      text-align: center !important;
     }
 
     body.desktop-multi-drop.has-videos:not(.desktop-file-dragging) #dropZone {
