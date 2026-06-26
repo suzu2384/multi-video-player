@@ -10,8 +10,7 @@
     }
 
     grid.querySelectorAll('.pair-move').forEach(button => {
-      const shouldHide = button.disabled;
-      if (button.hidden !== shouldHide) button.hidden = shouldHide;
+      button.style.display = button.disabled ? 'none' : '';
     });
   };
 
