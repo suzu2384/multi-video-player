@@ -57,6 +57,44 @@
       display: none !important;
     }
 
+    body.desktop-multi-drop #dropZone {
+      position: fixed !important;
+      inset: 52px 12px 52px 12px !important;
+      z-index: 45 !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      min-height: 0 !important;
+      margin: 0 !important;
+      opacity: 1;
+      pointer-events: auto;
+      transition: opacity .12s ease, background .12s ease, border-color .12s ease;
+    }
+
+    body.desktop-multi-drop.has-videos:not(.desktop-file-dragging) #dropZone {
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    body.desktop-multi-drop.desktop-file-dragging #dropZone {
+      opacity: 1 !important;
+      pointer-events: none !important;
+      border: 2px dashed #79aaff !important;
+      background: rgba(28, 73, 140, .82) !important;
+      backdrop-filter: blur(4px);
+      box-shadow: inset 0 0 0 4px rgba(121,170,255,.12);
+    }
+
+    body.desktop-multi-drop.desktop-file-dragging #dropZone .drop-instruction,
+    body.desktop-multi-drop.desktop-file-dragging #dropZone .file-button {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    body:not(.desktop-multi-drop) #dropZone.desktop-hidden {
+      display: none !important;
+    }
+
     .mobile-add-video {
       position: fixed;
       left: 14px;
@@ -162,19 +200,26 @@
   addButton.addEventListener('click', () => fileInput?.click());
   document.body.appendChild(addButton);
 
-  const refreshMobileOnlyUi = () => {
+  const refreshResponsiveUi = () => {
     const mobile = isMobileLayout();
-    addButton.classList.toggle(
-      'visible',
-      Boolean(fileInput) && mobile && videoGrid.classList.contains('multi-mode')
-    );
+    const multiMode = videoGrid.classList.contains('multi-mode');
+    const hasVideos = videoGrid.querySelector('.video-card') !== null;
+
+    addButton.classList.toggle('visible', Boolean(fileInput) && mobile && multiMode);
     dropZone?.classList.toggle('mobile-hidden', mobile);
+    dropZone?.classList.toggle('desktop-hidden', !mobile && !multiMode);
+    document.body.classList.toggle('desktop-multi-drop', !mobile && multiMode);
+    document.body.classList.toggle('has-videos', hasVideos);
+
+    if (mobile || !multiMode) {
+      document.body.classList.remove('desktop-file-dragging');
+    }
   };
 
   const refreshMobileLayout = () => {
     clampColumns();
     fixTwoVideoPairLayout();
-    refreshMobileOnlyUi();
+    refreshResponsiveUi();
   };
 
   const scheduleClamp = () => {
@@ -184,6 +229,31 @@
       window.setTimeout(refreshMobileLayout, 250);
     });
   };
+
+  let dragDepth = 0;
+  const hasDraggedFiles = event => [...(event.dataTransfer?.types || [])].includes('Files');
+
+  document.addEventListener('dragenter', event => {
+    if (isMobileLayout() || !videoGrid.classList.contains('multi-mode') || !hasDraggedFiles(event)) return;
+    dragDepth += 1;
+    document.body.classList.add('desktop-file-dragging');
+  }, true);
+
+  document.addEventListener('dragleave', event => {
+    if (!document.body.classList.contains('desktop-file-dragging')) return;
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) document.body.classList.remove('desktop-file-dragging');
+  }, true);
+
+  document.addEventListener('drop', () => {
+    dragDepth = 0;
+    document.body.classList.remove('desktop-file-dragging');
+  }, true);
+
+  window.addEventListener('blur', () => {
+    dragDepth = 0;
+    document.body.classList.remove('desktop-file-dragging');
+  });
 
   columnCount.addEventListener('input', scheduleClamp);
   columnCount.addEventListener('change', scheduleClamp);
