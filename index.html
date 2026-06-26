@@ -30,6 +30,46 @@
       visibility: hidden !important;
     }
 
+    @media (min-width: 921px) {
+      html:not(.mobile-boot) .video-grid.pair-mode .pair-move-controls {
+        position: absolute !important;
+        top: 12px !important;
+        right: 12px !important;
+        left: auto !important;
+        z-index: 40 !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, 32px) !important;
+        grid-template-rows: repeat(3, 32px) !important;
+        gap: 2px !important;
+        pointer-events: auto !important;
+      }
+
+      html:not(.mobile-boot) .video-grid.pair-mode .pair-move {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 32px !important;
+        height: 32px !important;
+        padding: 0 !important;
+        border: 1px solid #6b7788 !important;
+        border-radius: 7px !important;
+        background: rgba(24,28,35,.94) !important;
+        color: #fff !important;
+        font-size: 17px !important;
+        line-height: 1 !important;
+      }
+
+      html:not(.mobile-boot) .video-grid.pair-mode .pair-move:disabled {
+        opacity: .25 !important;
+        cursor: default !important;
+      }
+
+      html:not(.mobile-boot) .video-grid.pair-mode .move-up { grid-column: 2; grid-row: 1; }
+      html:not(.mobile-boot) .video-grid.pair-mode .move-left { grid-column: 1; grid-row: 2; }
+      html:not(.mobile-boot) .video-grid.pair-mode .move-right { grid-column: 3; grid-row: 2; }
+      html:not(.mobile-boot) .video-grid.pair-mode .move-down { grid-column: 2; grid-row: 3; }
+    }
+
     #devRefreshButton {
       position: fixed;
       left: 6px;
