@@ -15,7 +15,8 @@
 
   const foldStyle = document.createElement('style');
   foldStyle.textContent = `
-    #devRefreshButton {
+    #devRefreshButton,
+    body > div[style*="right: 6px"][style*="bottom: 4px"] {
       display: none !important;
     }
 
