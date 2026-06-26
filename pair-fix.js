@@ -4,6 +4,49 @@
 
   const mobilePanelStyle = document.createElement('style');
   mobilePanelStyle.textContent = `
+    .video-grid:not(.pair-mode) .pair-extra-controls {
+      display: contents;
+    }
+
+    .video-grid:not(.pair-mode) .pair-extra-controls > summary {
+      display: none;
+    }
+
+    body.pair-view .video-grid.pair-mode .pair-extra-controls {
+      margin-top: 8px;
+      border: 1px solid #3b4554;
+      border-radius: 8px;
+      background: #14181f;
+      overflow: hidden;
+    }
+
+    body.pair-view .video-grid.pair-mode .pair-extra-controls > summary {
+      padding: 8px 10px;
+      color: #d4dae3;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    body.pair-view .video-grid.pair-mode .pair-extra-controls[open] > summary {
+      border-bottom: 1px solid #303641;
+    }
+
+    body.pair-view .video-grid.pair-mode .pair-extra-controls > .video-controls,
+    body.pair-view .video-grid.pair-mode .pair-extra-controls > .crop-controls {
+      margin: 0 !important;
+      padding: 8px 10px !important;
+    }
+
+    body.pair-view .video-grid.pair-mode .pair-extra-controls > .crop-controls {
+      border-top: 1px solid #303641 !important;
+    }
+
+    body.pair-view .video-grid.pair-mode .crop-controls .section-icon {
+      display: none !important;
+    }
+
     @media (max-width: 920px) {
       body.pair-view .video-grid.pair-mode .video-controls {
         display: flex !important;
@@ -23,10 +66,6 @@
         display: grid !important;
         grid-template-columns: minmax(0, 1fr) !important;
         gap: 8px !important;
-      }
-
-      body.pair-view .video-grid.pair-mode .crop-controls .section-icon {
-        grid-column: auto !important;
       }
 
       body.pair-view .video-grid.pair-mode .crop-controls .icon-field {
@@ -52,6 +91,28 @@
   let swapLayer = null;
 
   const getSelectedCards = () => [...grid.querySelectorAll('.video-card.pair-selected:not(.hidden-in-pair)')];
+
+  const ensureFoldableControls = () => {
+    grid.querySelectorAll('.video-card').forEach(card => {
+      const info = card.querySelector('.video-info');
+      const videoControls = info?.querySelector(':scope > .video-controls');
+      const cropControls = info?.querySelector(':scope > .crop-controls');
+      const timeRow = info?.querySelector(':scope > .time-row');
+      if (!info || !videoControls || !cropControls || !timeRow) return;
+
+      let details = info.querySelector(':scope > .pair-extra-controls');
+      if (!details) {
+        details = document.createElement('details');
+        details.className = 'pair-extra-controls';
+        const summary = document.createElement('summary');
+        summary.textContent = '操作';
+        details.appendChild(summary);
+        info.insertBefore(details, timeRow);
+      }
+
+      details.append(videoControls, cropControls);
+    });
+  };
 
   const hasSameCards = cards => (
     cards.length === knownCards.length && cards.every(card => knownCards.includes(card))
@@ -183,6 +244,7 @@
   const refresh = () => {
     scheduled = false;
 
+    ensureFoldableControls();
     grid.style.position = 'relative';
     grid.querySelectorAll('.pair-move-controls').forEach(controls => {
       controls.style.display = 'none';
