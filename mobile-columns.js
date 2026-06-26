@@ -69,7 +69,7 @@
 
     body.desktop-multi-drop #dropZone {
       position: fixed !important;
-      inset: 52px 12px 52px 12px !important;
+      inset: 12px 12px calc(var(--toolbar-height, 72px) + 12px) 12px !important;
       z-index: 45 !important;
       display: flex !important;
       flex-direction: column !important;
