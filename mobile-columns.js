@@ -16,6 +16,12 @@
 
   const foldStyle = document.createElement('style');
   foldStyle.textContent = `
+    .video-grid.multi-mode .video-card {
+      grid-column: auto !important;
+      grid-row: auto !important;
+      order: initial !important;
+    }
+
     .video-grid .pair-extra-controls {
       display: block !important;
       margin-top: 8px;
