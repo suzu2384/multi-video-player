@@ -47,11 +47,23 @@
     videoGrid.style.setProperty('--multi-columns', String(columns));
   };
 
+  const fixTwoVideoPairLayout = () => {
+    if (!videoGrid.classList.contains('pair-count-2')) return;
+    videoGrid.querySelectorAll('.pair-left, .pair-right').forEach(card => {
+      card.classList.remove('pair-top-left', 'pair-top-right', 'pair-bottom-left', 'pair-bottom-right');
+    });
+  };
+
+  const refreshMobileLayout = () => {
+    clampColumns();
+    fixTwoVideoPairLayout();
+  };
+
   const scheduleClamp = () => {
     window.requestAnimationFrame(() => {
-      clampColumns();
-      window.setTimeout(clampColumns, 0);
-      window.setTimeout(clampColumns, 250);
+      refreshMobileLayout();
+      window.setTimeout(refreshMobileLayout, 0);
+      window.setTimeout(refreshMobileLayout, 250);
     });
   };
 
@@ -61,6 +73,9 @@
   window.addEventListener('orientationchange', scheduleClamp);
   window.addEventListener('pageshow', scheduleClamp);
   document.addEventListener('visibilitychange', scheduleClamp);
+  document.addEventListener('click', event => {
+    if (event.target.closest('#pairModeButton, .pair-move')) scheduleClamp();
+  });
   if (fileInput) fileInput.addEventListener('change', scheduleClamp);
 
   new MutationObserver(scheduleClamp).observe(videoGrid, { childList: true, subtree: false });
