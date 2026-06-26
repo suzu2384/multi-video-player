@@ -50,7 +50,14 @@
   };
 
   const rebuildColumnOptions = maxColumns => {
-    const currentColumns = Math.min(maxColumns, Math.max(1, Number(columnCount.value) || 1));
+    const videoCount = videoGrid.querySelectorAll('.video-card').length;
+    const fallbackColumns = Math.min(maxColumns, Math.max(1, videoCount));
+    const selectedColumns = Number(columnCount.value);
+    const currentColumns = Math.min(
+      maxColumns,
+      Math.max(1, Number.isFinite(selectedColumns) && selectedColumns > 0 ? selectedColumns : fallbackColumns)
+    );
+
     columnCount.replaceChildren();
     for (let count = 1; count <= maxColumns; count += 1) {
       const option = document.createElement('option');
