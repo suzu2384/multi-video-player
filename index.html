@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-floating-controls-drawer';
+      const BUILD_KEY = '20260627-plus-add-icon';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -236,7 +236,7 @@
         <span>ローカル動画は複数のファイルをまとめて追加できます</span>
       </div>
       <label class="file-button icon-button" title="動画ファイルを選択して追加" aria-label="動画ファイルを選択して追加">
-        ＋
+        <img src="assets/plus-icon.svg" alt="" class="button-icon-image" />
         <input id="fileInput" type="file" accept="video/*,.mp4,.m4v,.mov,.webm,.avi,.mkv" multiple />
       </label>
     </section>
@@ -302,7 +302,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-floating-controls-drawer';
+      const BUILD_KEY = '20260627-plus-add-icon';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
