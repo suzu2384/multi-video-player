@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-pair-fix-order-swap';
+      const BUILD_KEY = '20260627-download-icon-button';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -196,7 +196,7 @@
         <input id="pairHeight" type="number" min="180" max="2160" step="10" value="720" aria-label="動画領域の縦幅（px）" />
       </label>
       <button id="resetPairSize" class="icon-button" type="button" title="並列表示サイズを初期値に戻す" aria-label="並列表示サイズを初期値に戻す"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button>
-      <button id="exportPair" type="button" class="icon-button" title="並列動画を書き出す" aria-label="並列動画を書き出す">⬇</button>
+      <button id="exportPair" type="button" class="icon-button" title="並列動画を書き出す" aria-label="並列動画を書き出す"><img src="assets/download-icon.svg" alt="" class="button-icon-image" /></button>
       <label class="icon-field export-option" title="書き出しコーデック">
         <span aria-hidden="true">🎞</span><span class="sr-only">書き出しコーデック</span>
         <select id="exportCodec" aria-label="書き出しコーデック"></select>
@@ -302,7 +302,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-pair-fix-order-swap';
+      const BUILD_KEY = '20260627-download-icon-button';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
