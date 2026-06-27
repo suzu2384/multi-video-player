@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-restart-icon-16646b1';
+      const BUILD_KEY = '20260627-volume-icon-4c192a9';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -78,6 +78,14 @@
       height: 24px;
       pointer-events: none;
     }
+
+    .icon-field .field-icon-image {
+      display: block;
+      width: 22px;
+      height: 22px;
+      pointer-events: none;
+      justify-self: center;
+    }
   </style>
 </head>
 <body>
@@ -124,7 +132,7 @@
       <button id="restartAll" class="icon-button toolbar-icon-button" type="button" title="先頭に戻す" aria-label="先頭に戻す"><img src="assets/restart-icon.svg" alt="" class="toolbar-icon-image" /></button>
       <button id="removeAll" type="button" class="danger icon-button" title="すべて削除" aria-label="すべて削除">🗑</button>
       <label class="range-field icon-field" title="共通音量">
-        <span aria-hidden="true">🔊</span><span class="sr-only">共通音量</span>
+        <img src="assets/volume-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">共通音量</span>
         <input id="masterVolume" type="range" min="0" max="1" step="0.01" value="1" aria-label="共通音量" />
       </label>
     </section>
@@ -176,7 +184,7 @@
         </div>
         <div class="video-controls">
           <label class="icon-field" title="個別音量">
-            <span aria-hidden="true">🔉</span><span class="sr-only">個別音量</span>
+            <img src="assets/volume-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">個別音量</span>
             <input class="volume-slider" type="range" min="0" max="1" step="0.01" value="1" aria-label="個別音量" />
           </label>
           <label class="icon-field" title="開始位置（秒）">
@@ -201,7 +209,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-restart-icon-16646b1';
+      const BUILD_KEY = '20260627-volume-icon-4c192a9';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
