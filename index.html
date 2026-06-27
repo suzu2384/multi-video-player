@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-crop-number-sync';
+      const BUILD_KEY = '20260627-fix-seek-order-pair-swap';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -182,6 +182,7 @@
 </head>
 <body>
   <button id="devRefreshButton" type="button" title="開発用：キャッシュを使わず再読み込み" aria-label="キャッシュを使わず再読み込み">↻</button>
+  <button id="syncAll" type="button" hidden aria-hidden="true"></button>
 
   <main>
     <section id="pairSettings" class="pair-settings" aria-label="並列表示設定">
@@ -274,6 +275,11 @@
           <span class="video-title"></span>
           <button type="button" class="remove-button" title="この動画を削除" aria-label="この動画を削除">✕</button>
         </div>
+        <div class="time-row">
+          <span class="current-time">00:00.0</span>
+          <input class="seek-slider" type="range" min="0" max="1000" step="1" value="0" aria-label="再生位置" />
+          <span class="duration">00:00.0</span>
+        </div>
         <div class="video-controls">
           <label class="icon-field" title="個別音量">
             <img src="assets/volume-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">個別音量</span>
@@ -290,18 +296,13 @@
           <label class="icon-field" title="横方向の表示位置"><img src="assets/move-horizontal-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">横方向の表示位置</span><input class="crop-x" type="range" min="0" max="100" step="1" value="50" aria-label="横方向の表示位置" /><input class="crop-value-input crop-x-value" type="number" min="0" max="100" step="1" value="50" aria-label="横方向の表示位置の数値" oninput="this.previousElementSibling.value=this.value;this.previousElementSibling.dispatchEvent(new Event('input',{bubbles:true}))" /><button class="reset-x icon-button mini-reset" type="button" title="横位置をリセット" aria-label="横位置をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
           <label class="icon-field" title="縦方向の表示位置"><img src="assets/move-vertical-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">縦方向の表示位置</span><input class="crop-y" type="range" min="0" max="100" step="1" value="50" aria-label="縦方向の表示位置" /><input class="crop-value-input crop-y-value" type="number" min="0" max="100" step="1" value="50" aria-label="縦方向の表示位置の数値" oninput="this.previousElementSibling.value=this.value;this.previousElementSibling.dispatchEvent(new Event('input',{bubbles:true}))" /><button class="reset-y icon-button mini-reset" type="button" title="縦位置をリセット" aria-label="縦位置をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
         </div>
-        <div class="time-row">
-          <span class="current-time">00:00.0</span>
-          <input class="seek-slider" type="range" min="0" max="1000" step="1" value="0" aria-label="再生位置" />
-          <span class="duration">00:00.0</span>
-        </div>
       </div>
     </article>
   </template>
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-crop-number-sync';
+      const BUILD_KEY = '20260627-fix-seek-order-pair-swap';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
