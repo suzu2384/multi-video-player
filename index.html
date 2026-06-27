@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-start-offset-icon-31bad92';
+      const BUILD_KEY = '20260627-swap-controls-seek';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -106,6 +106,27 @@
       width: 18px;
       height: 18px;
       pointer-events: none;
+    }
+
+    .video-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .video-info .title-row {
+      order: 0;
+    }
+
+    .video-info .time-row {
+      order: 1;
+    }
+
+    .video-info .video-controls {
+      order: 2;
+    }
+
+    .video-info .crop-controls {
+      order: 3;
     }
   </style>
 </head>
@@ -230,7 +251,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-start-offset-icon-31bad92';
+      const BUILD_KEY = '20260627-swap-controls-seek';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
