@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-crop-number-position';
+      const BUILD_KEY = '20260627-crop-number-sync';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -301,7 +301,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-crop-number-position';
+      const BUILD_KEY = '20260627-crop-number-sync';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
@@ -357,10 +357,61 @@
         restoreStatusIcons();
       };
 
+      const syncCropValueInputs = root => {
+        const scope = root && root.querySelectorAll ? root : document;
+        scope.querySelectorAll('.video-card').forEach(card => {
+          [
+            ['.crop-zoom', '.crop-zoom-value', 2],
+            ['.crop-x', '.crop-x-value', 0],
+            ['.crop-y', '.crop-y-value', 0]
+          ].forEach(([rangeSelector, valueSelector, fixedDigits]) => {
+            const range = card.querySelector(rangeSelector);
+            const value = card.querySelector(valueSelector);
+            if (!range || !value || value.dataset.cropSyncReady === 'true') return;
+            const copyFromRange = () => {
+              const numericValue = Number(range.value);
+              value.value = Number.isFinite(numericValue) ? numericValue.toFixed(fixedDigits) : range.value;
+            };
+            const copyToRange = () => {
+              const fallback = Number(range.value) || Number(range.defaultValue) || 0;
+              const min = Number(range.min);
+              const max = Number(range.max);
+              let next = Number(value.value);
+              if (!Number.isFinite(next)) next = fallback;
+              if (Number.isFinite(min)) next = Math.max(min, next);
+              if (Number.isFinite(max)) next = Math.min(max, next);
+              value.value = next.toFixed(fixedDigits);
+              range.value = String(next);
+              range.dispatchEvent(new Event('input', { bubbles: true }));
+            };
+            value.dataset.cropSyncReady = 'true';
+            range.addEventListener('input', copyFromRange);
+            value.addEventListener('input', copyToRange);
+            value.addEventListener('change', copyToRange);
+            card.querySelectorAll('.mini-reset').forEach(button => {
+              button.addEventListener('click', () => requestAnimationFrame(copyFromRange));
+            });
+            copyFromRange();
+          });
+        });
+      };
+
+      const observeCropValueInputs = () => {
+        const grid = document.getElementById('videoGrid');
+        if (!grid) return;
+        syncCropValueInputs(grid);
+        new MutationObserver(mutations => {
+          mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => syncCropValueInputs(node));
+          });
+        }).observe(grid, { childList: true, subtree: true });
+      };
+
       const loadNext = index => {
         if (index >= files.length) {
           configureExportCodec();
           observeStatusIcons();
+          observeCropValueInputs();
           document.documentElement.classList.add('mobile-ui-ready');
           return;
         }
