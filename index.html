@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-video-count-icon-d076daa';
+      const BUILD_KEY = '20260627-start-offset-icon-31bad92';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -209,7 +209,7 @@
             <input class="volume-slider" type="range" min="0" max="1" step="0.01" value="1" aria-label="個別音量" />
           </label>
           <label class="icon-field" title="開始位置（秒）">
-            <span aria-hidden="true">⏱</span><span class="sr-only">開始位置（秒）</span>
+            <img src="assets/start-offset-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">開始位置（秒）</span>
             <input class="start-offset" type="number" min="0" step="0.1" value="0" aria-label="開始位置（秒）" /><span class="input-unit" aria-hidden="true">秒</span>
           </label>
         </div>
@@ -230,7 +230,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-video-count-icon-d076daa';
+      const BUILD_KEY = '20260627-start-offset-icon-31bad92';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
