@@ -8,20 +8,41 @@
   const style = document.createElement('style');
   style.textContent = `
     #videoGrid.pair-mode .pair-move-controls {
-      display: grid !important;
-      z-index: 140 !important;
-      pointer-events: auto !important;
+      display: none !important;
     }
-    #videoGrid.pair-mode .pair-move {
-      display: inline-flex !important;
-      align-items: center !important;
-      justify-content: center !important;
+
+    .pair-center-swap-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 140;
+      pointer-events: none;
     }
-    #videoGrid.pair-mode .pair-move-icon-image {
-      display: block !important;
-      width: 18px !important;
-      height: 18px !important;
-      pointer-events: none !important;
+    .pair-center-swap-button {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 38px;
+      height: 38px;
+      padding: 0 !important;
+      border: 1px solid #6b7788;
+      border-radius: 50%;
+      background: rgba(24,28,35,.94);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(0,0,0,.45);
+      pointer-events: auto;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .pair-center-swap-button img {
+      display: block;
+      width: 22px;
+      height: 22px;
+      pointer-events: none;
+    }
+    .pair-center-swap-button:disabled {
+      opacity: .35;
+      cursor: default;
     }
 
     .pair-settings {
@@ -173,6 +194,7 @@
 
   let scheduled = false;
   let columnsManuallySet = false;
+  let swapLayer = null;
 
   const ensurePairSettingsPlacement = () => {
     if (!pairSettings || !grid.parentElement) return;
@@ -311,11 +333,79 @@
     });
   };
 
+  const getSelectedCards = () => [...grid.querySelectorAll('.video-card.pair-selected:not(.hidden-in-pair)')];
+
+  const ensureSwapLayer = () => {
+    if (swapLayer?.isConnected) return swapLayer;
+    swapLayer = document.createElement('div');
+    swapLayer.className = 'pair-center-swap-layer';
+    grid.appendChild(swapLayer);
+    return swapLayer;
+  };
+
+  const clickNativeMove = (sourceIndex, direction) => {
+    const cards = getSelectedCards();
+    const source = cards[sourceIndex];
+    const nativeButton = source?.querySelector(`.pair-move[data-direction="${direction}"]`);
+    if (!nativeButton) return;
+    const wasDisabled = nativeButton.disabled;
+    nativeButton.disabled = false;
+    nativeButton.click();
+    nativeButton.disabled = wasDisabled;
+    requestAnimationFrame(schedule);
+    setTimeout(schedule, 80);
+  };
+
+  const addCenterSwapButton = (sourceIndex, targetIndex, direction, iconSrc, left, top, label) => {
+    const cards = getSelectedCards();
+    if (!cards[sourceIndex] || !cards[targetIndex]) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'pair-center-swap-button';
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    button.style.left = `${left}%`;
+    button.style.top = `${top}%`;
+    const image = document.createElement('img');
+    image.src = iconSrc;
+    image.alt = '';
+    button.appendChild(image);
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      clickNativeMove(sourceIndex, direction);
+    });
+    ensureSwapLayer().appendChild(button);
+  };
+
+  const renderCenterSwapButtons = () => {
+    const layer = ensureSwapLayer();
+    layer.replaceChildren();
+    const cards = getSelectedCards();
+    if (!grid.classList.contains('pair-mode') || cards.length < 2) {
+      layer.style.display = 'none';
+      return;
+    }
+    layer.style.display = 'block';
+    grid.style.position = 'relative';
+
+    if (cards.length === 2) {
+      addCenterSwapButton(0, 1, 'right', 'assets/swap-horizontal-icon.svg', 50, 50, '左右の動画を入れ替える');
+      return;
+    }
+
+    addCenterSwapButton(0, 1, 'right', 'assets/swap-horizontal-icon.svg', 50, 25, '上段左右の動画を入れ替える');
+    addCenterSwapButton(2, 3, 'right', 'assets/swap-horizontal-icon.svg', 50, 75, '下段左右の動画を入れ替える');
+    addCenterSwapButton(0, 2, 'down', 'assets/swap-vertical-icon.svg', 25, 50, '左列上下の動画を入れ替える');
+    addCenterSwapButton(1, 3, 'down', 'assets/swap-vertical-icon.svg', 75, 50, '右列上下の動画を入れ替える');
+  };
+
   const refresh = () => {
     scheduled = false;
     ensurePairSettingsLayout();
     ensurePairSettingsPlacement();
     ensureDrawersAndSeek();
+    renderCenterSwapButtons();
     if (grid.classList.contains('multi-mode')) forceAutomaticColumns();
   };
 
