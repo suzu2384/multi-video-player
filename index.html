@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-crop-edit-values';
+      const BUILD_KEY = '20260627-swap-horizontal-icon-87e6561';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -109,6 +109,13 @@
     }
 
     .pair-selector .pair-selector-icon-image {
+      display: block;
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+    }
+
+    .pair-move .pair-move-icon-image {
       display: block;
       width: 18px;
       height: 18px;
@@ -238,8 +245,8 @@
         <div class="media-error" hidden></div>
         <div class="pair-move-controls" aria-label="並列位置を入れ替える">
           <button type="button" class="pair-move move-up" data-direction="up" title="上の動画と入れ替える" aria-label="上の動画と入れ替える">↑</button>
-          <button type="button" class="pair-move move-left" data-direction="left" title="左の動画と入れ替える" aria-label="左の動画と入れ替える">←</button>
-          <button type="button" class="pair-move move-right" data-direction="right" title="右の動画と入れ替える" aria-label="右の動画と入れ替える">→</button>
+          <button type="button" class="pair-move move-left" data-direction="left" title="左の動画と入れ替える" aria-label="左の動画と入れ替える"><img src="assets/swap-horizontal-icon.svg" alt="" class="pair-move-icon-image" /></button>
+          <button type="button" class="pair-move move-right" data-direction="right" title="右の動画と入れ替える" aria-label="右の動画と入れ替える"><img src="assets/swap-horizontal-icon.svg" alt="" class="pair-move-icon-image" /></button>
           <button type="button" class="pair-move move-down" data-direction="down" title="下の動画と入れ替える" aria-label="下の動画と入れ替える">↓</button>
         </div>
         <label class="pair-selector" title="並列動画に選択">
@@ -279,7 +286,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-crop-edit-values';
+      const BUILD_KEY = '20260627-swap-horizontal-icon-87e6561';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
