@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-pair-swap-f9e6690';
+      const BUILD_KEY = '20260627-play-icon-e4eea31';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -63,6 +63,21 @@
     #devRefreshButton {
       display: none !important;
     }
+
+    #playAll.play-icon-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0;
+      line-height: 0;
+    }
+
+    #playAll .toolbar-icon-image {
+      display: block;
+      width: 24px;
+      height: 24px;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -104,7 +119,7 @@
       <button id="multiModeButton" class="mode-button icon-button active" type="button" title="複数動画モード" aria-label="複数動画モード">▦</button>
       <button id="pairModeButton" class="mode-button icon-button" type="button" title="並列動画モード" aria-label="並列動画モード">▥</button>
       <span class="toolbar-separator" aria-hidden="true"></span>
-      <button id="playAll" class="icon-button" type="button" title="再生" aria-label="再生">▶</button>
+      <button id="playAll" class="icon-button play-icon-button" type="button" title="再生" aria-label="再生"><img src="assets/play-icon.svg" alt="" class="toolbar-icon-image" /></button>
       <button id="pauseAll" class="icon-button" type="button" title="一時停止" aria-label="一時停止">⏸</button>
       <button id="restartAll" class="icon-button" type="button" title="先頭に戻す" aria-label="先頭に戻す">↺</button>
       <button id="syncAll" class="icon-button" type="button" title="再同期" aria-label="再同期">⟳</button>
@@ -187,7 +202,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-pair-swap-f9e6690';
+      const BUILD_KEY = '20260627-play-icon-e4eea31';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
