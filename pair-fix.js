@@ -76,56 +76,35 @@
     body.pair-view .video-grid.pair-mode { overflow: visible !important; }
     body.pair-view main { overflow: auto !important; }
 
-    .pair-seek-dock {
-      position: absolute;
-      left: 8px;
-      right: 8px;
-      bottom: 8px;
-      z-index: 24;
-      padding: 6px 8px;
-      border-radius: 8px;
-      background: rgba(10,12,16,.82);
-      backdrop-filter: blur(5px);
+    .controls-drawer-content .video-controls {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 8px !important;
     }
-    .pair-seek-dock .time-row {
-      margin: 0 !important;
+    .controls-drawer-content .video-controls label {
       display: grid !important;
-      grid-template-columns: auto auto !important;
-      gap: 4px 8px !important;
-      color: #fff !important;
-    }
-    .pair-seek-dock .seek-slider {
-      grid-column: 1 / -1 !important;
-      grid-row: 1 !important;
+      grid-template-columns: 30px minmax(0,1fr) auto !important;
+      align-items: center !important;
       width: 100% !important;
     }
-    .pair-seek-dock .current-time { grid-column: 1; grid-row: 2; }
-    .pair-seek-dock .duration { grid-column: 2; grid-row: 2; text-align: right; }
+    .controls-drawer-content .crop-controls {
+      display: grid !important;
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+    }
+    .controls-drawer-content .crop-controls .icon-field {
+      display: grid !important;
+      grid-template-columns: 30px minmax(0,1fr) 72px 34px !important;
+      align-items: center !important;
+      width: 100% !important;
+    }
 
-    @media (max-width: 920px) {
-      .controls-drawer-content .video-controls {
-        display: flex !important;
-        flex-direction: column !important;
-        align-items: stretch !important;
-        gap: 8px !important;
-      }
-      .controls-drawer-content .video-controls label {
-        display: grid !important;
-        grid-template-columns: 30px minmax(0,1fr) auto !important;
-        align-items: center !important;
-        width: 100% !important;
-      }
-      .controls-drawer-content .crop-controls {
-        display: grid !important;
-        grid-template-columns: 1fr !important;
-        gap: 8px !important;
-      }
-      .controls-drawer-content .crop-controls .icon-field {
-        display: grid !important;
-        grid-template-columns: 30px minmax(0,1fr) 48px 28px !important;
-        align-items: center !important;
-        width: 100% !important;
-      }
+    .pair-swap-button img {
+      display: block;
+      width: 22px;
+      height: 22px;
+      pointer-events: none;
     }
   `;
   document.head.appendChild(style);
@@ -161,59 +140,61 @@
     grid.style.setProperty('--multi-columns', String(desired));
   };
 
+  const createDrawer = (card) => {
+    const drawer = document.createElement('div');
+    drawer.className = 'controls-drawer';
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'controls-drawer-toggle';
+    toggle.textContent = '操作';
+    toggle.setAttribute('aria-expanded', 'false');
+    const content = document.createElement('div');
+    content.className = 'controls-drawer-content';
+    toggle.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const open = drawer.classList.toggle('open');
+      card.classList.toggle('drawer-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      if (open) drawer.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    });
+    drawer.append(toggle, content);
+    return drawer;
+  };
+
+  const placeAfter = (parent, node, previous) => {
+    if (!parent || !node) return;
+    parent.insertBefore(node, previous ? previous.nextSibling : parent.firstChild);
+  };
+
   const ensureDrawersAndSeek = () => {
-    const pairMode = grid.classList.contains('pair-mode');
     grid.querySelectorAll('.video-card').forEach(card => {
       const info = card.querySelector('.video-info');
       const frame = card.querySelector('.video-frame');
       if (!info || !frame) return;
 
       const oldDetails = info.querySelector(':scope > .pair-extra-controls');
+      let drawer = info.querySelector(':scope > .controls-drawer');
+      const drawerContent = drawer?.querySelector(':scope > .controls-drawer-content');
       let videoControls = info.querySelector(':scope > .video-controls')
-        || oldDetails?.querySelector(':scope > .video-controls');
+        || oldDetails?.querySelector(':scope > .video-controls')
+        || drawerContent?.querySelector(':scope > .video-controls');
       let cropControls = info.querySelector(':scope > .crop-controls')
-        || oldDetails?.querySelector(':scope > .crop-controls');
+        || oldDetails?.querySelector(':scope > .crop-controls')
+        || drawerContent?.querySelector(':scope > .crop-controls');
       let timeRow = info.querySelector(':scope > .time-row')
         || frame.querySelector('.pair-seek-dock > .time-row');
       if (!videoControls || !cropControls || !timeRow) return;
 
-      let drawer = info.querySelector(':scope > .controls-drawer');
-      if (!drawer) {
-        drawer = document.createElement('div');
-        drawer.className = 'controls-drawer';
-        const toggle = document.createElement('button');
-        toggle.type = 'button';
-        toggle.className = 'controls-drawer-toggle';
-        toggle.textContent = '操作';
-        toggle.setAttribute('aria-expanded', 'false');
-        const content = document.createElement('div');
-        content.className = 'controls-drawer-content';
-        toggle.addEventListener('click', event => {
-          event.preventDefault();
-          event.stopPropagation();
-          const open = drawer.classList.toggle('open');
-          card.classList.toggle('drawer-open', open);
-          toggle.setAttribute('aria-expanded', String(open));
-          if (open) drawer.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        });
-        drawer.append(toggle, content);
-        info.insertBefore(drawer, info.firstElementChild?.nextElementSibling || null);
-      }
+      frame.querySelector(':scope > .pair-seek-dock')?.remove();
+
+      const titleRow = info.querySelector(':scope > .title-row');
+      placeAfter(info, timeRow, titleRow);
+
+      if (!drawer) drawer = createDrawer(card);
+      placeAfter(info, drawer, timeRow);
       drawer.querySelector('.controls-drawer-content').append(videoControls, cropControls);
       oldDetails?.remove();
-
-      let dock = frame.querySelector(':scope > .pair-seek-dock');
-      if (pairMode) {
-        if (!dock) {
-          dock = document.createElement('div');
-          dock.className = 'pair-seek-dock';
-          frame.appendChild(dock);
-        }
-        dock.appendChild(timeRow);
-      } else {
-        dock?.remove();
-        info.appendChild(timeRow);
-      }
     });
   };
 
@@ -286,6 +267,12 @@
     return true;
   };
 
+  const refreshVisualSlots = (from, to) => {
+    [slots[from], slots[to]] = [slots[to], slots[from]];
+    applySlotClasses(getSelectedCards());
+    renderSwaps();
+  };
+
   const addSwap = (from,to,symbol,left,top) => {
     const source = slots[from];
     const target = slots[to];
@@ -293,12 +280,23 @@
 
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = symbol;
-    Object.assign(button.style,{position:'absolute',left:`${left}%`,top:`${top}%`,transform:'translate(-50%,-50%)',width:'38px',height:'38px',padding:'0',border:'1px solid #6b7788',borderRadius:'50%',background:'rgba(24,28,35,.94)',color:'#fff',fontSize:'20px',lineHeight:'1',boxShadow:'0 2px 10px rgba(0,0,0,.45)',pointerEvents:'auto'});
+    button.className = 'pair-swap-button';
+    button.title = symbol === 'horizontal' ? '左右の動画を入れ替える' : '上下の動画を入れ替える';
+    button.setAttribute('aria-label', button.title);
+    if (symbol === 'horizontal') {
+      const image = document.createElement('img');
+      image.src = 'assets/swap-horizontal-icon.svg';
+      image.alt = '';
+      button.appendChild(image);
+    } else {
+      button.textContent = '⇅';
+    }
+    Object.assign(button.style,{position:'absolute',left:`${left}%`,top:`${top}%`,transform:'translate(-50%,-50%)',width:'38px',height:'38px',padding:'0',border:'1px solid #6b7788',borderRadius:'50%',background:'rgba(24,28,35,.94)',color:'#fff',fontSize:'20px',lineHeight:'1',boxShadow:'0 2px 10px rgba(0,0,0,.45)',pointerEvents:'auto',display:'inline-flex',alignItems:'center',justifyContent:'center'});
     button.addEventListener('click',event => {
       event.preventDefault();
       event.stopPropagation();
       const moved = triggerNativeMove(source, getMoveDirection(from, to));
+      refreshVisualSlots(from, to);
       if (!moved) return;
       knownCards = [];
       slots = [];
@@ -307,19 +305,19 @@
     getSwapLayer().appendChild(button);
   };
 
-  const renderSwaps = () => {
+  function renderSwaps() {
     const layer = getSwapLayer();
     layer.replaceChildren();
     if (!grid.classList.contains('pair-mode')) { layer.style.display = 'none'; return; }
     layer.style.display = 'block';
-    if (knownCards.length === 2) { addSwap(0,1,'⇄',50,50); return; }
+    if (knownCards.length === 2) { addSwap(0,1,'horizontal',50,50); return; }
     if (knownCards.length >= 3) {
-      addSwap(0,1,'⇄',50,25);
-      addSwap(2,3,'⇄',50,75);
-      addSwap(0,2,'⇅',25,50);
-      addSwap(1,3,'⇅',75,50);
+      addSwap(0,1,'horizontal',50,25);
+      addSwap(2,3,'horizontal',50,75);
+      addSwap(0,2,'vertical',25,50);
+      addSwap(1,3,'vertical',75,50);
     }
-  };
+  }
 
   const refresh = () => {
     scheduled = false;
