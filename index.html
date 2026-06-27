@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-volume-icon-4c192a9';
+      const BUILD_KEY = '20260627-trash-icon-68623cc';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -130,7 +130,7 @@
       <button id="playAll" class="icon-button toolbar-icon-button" type="button" title="再生" aria-label="再生"><img src="assets/play-icon.svg" alt="" class="toolbar-icon-image" /></button>
       <button id="pauseAll" class="icon-button toolbar-icon-button" type="button" title="一時停止" aria-label="一時停止"><img src="assets/pause-icon.svg" alt="" class="toolbar-icon-image" /></button>
       <button id="restartAll" class="icon-button toolbar-icon-button" type="button" title="先頭に戻す" aria-label="先頭に戻す"><img src="assets/restart-icon.svg" alt="" class="toolbar-icon-image" /></button>
-      <button id="removeAll" type="button" class="danger icon-button" title="すべて削除" aria-label="すべて削除">🗑</button>
+      <button id="removeAll" type="button" class="danger icon-button toolbar-icon-button" title="すべて削除" aria-label="すべて削除"><img src="assets/trash-icon.svg" alt="" class="toolbar-icon-image" /></button>
       <label class="range-field icon-field" title="共通音量">
         <img src="assets/volume-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">共通音量</span>
         <input id="masterVolume" type="range" min="0" max="1" step="0.01" value="1" aria-label="共通音量" />
@@ -209,7 +209,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-volume-icon-4c192a9';
+      const BUILD_KEY = '20260627-trash-icon-68623cc';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
