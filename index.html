@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-swap-horizontal-icon-87e6561';
+      const BUILD_KEY = '20260627-crop-number-position';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -150,14 +150,29 @@
       width: 100% !important;
     }
 
+    .crop-controls .icon-field > .sr-only {
+      display: none !important;
+    }
+
+    .crop-controls .icon-field > input[type="range"] {
+      grid-column: 2 !important;
+      grid-row: 1 !important;
+      width: 100% !important;
+      min-width: 0 !important;
+    }
+
     .crop-controls .crop-value-input {
-      width: 68px;
+      grid-column: 3 !important;
+      grid-row: 1 !important;
+      width: 68px !important;
       min-width: 0;
       box-sizing: border-box;
       text-align: right;
     }
 
     .crop-controls .mini-reset {
+      grid-column: 4 !important;
+      grid-row: 1 !important;
       justify-self: end;
       display: inline-flex;
       align-items: center;
@@ -286,7 +301,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-swap-horizontal-icon-87e6561';
+      const BUILD_KEY = '20260627-crop-number-position';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
