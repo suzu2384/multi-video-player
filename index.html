@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-multi-mode-icon-f7042f7';
+      const BUILD_KEY = '20260627-stat-icons-pair-selector';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -86,6 +86,27 @@
       pointer-events: none;
       justify-self: center;
     }
+
+    .icon-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .icon-status .status-icon-image {
+      display: block;
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+      flex: 0 0 auto;
+    }
+
+    .pair-selector .pair-selector-icon-image {
+      display: block;
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
@@ -150,10 +171,10 @@
 
     <section id="videoGrid" class="video-grid multi-mode" aria-live="polite"></section>
     <div id="multiStats" class="multi-stats" aria-label="複数動画モードの状態">
-      <span id="videoCount" class="icon-status" title="追加されている動画数" aria-label="追加されている動画数">🎞 0</span>
-      <span id="selectionCount" class="icon-status" title="並列動画の選択数" aria-label="並列動画の選択数">▥ 0 / 4</span>
+      <span id="videoCount" class="icon-status" title="追加されている動画数" aria-label="追加されている動画数"><img src="assets/multi-mode-icon.svg" alt="" class="status-icon-image" /><span class="status-text">0</span></span>
+      <span id="selectionCount" class="icon-status" title="並列動画の選択数" aria-label="並列動画の選択数"><img src="assets/pair-mode-icon.svg" alt="" class="status-icon-image" /><span class="status-text">0 / 4</span></span>
       <label class="icon-field" title="複数動画モードの列数">
-        <span aria-hidden="true">▦</span><span class="sr-only">列数</span>
+        <img src="assets/multi-mode-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">列数</span>
         <select id="columnCount" aria-label="複数動画モードの列数"></select>
       </label>
     </div>
@@ -173,7 +194,7 @@
           <button type="button" class="pair-move move-down" data-direction="down" title="下の動画と入れ替える" aria-label="下の動画と入れ替える">↓</button>
         </div>
         <label class="pair-selector" title="並列動画に選択">
-          <span aria-hidden="true">▥</span><span class="sr-only">並列動画に選択</span>
+          <img src="assets/pair-mode-icon.svg" alt="" class="pair-selector-icon-image" /><span class="sr-only">並列動画に選択</span>
           <input class="pair-checkbox" type="checkbox" aria-label="並列動画に選択" />
         </label>
       </div>
@@ -209,7 +230,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-multi-mode-icon-f7042f7';
+      const BUILD_KEY = '20260627-stat-icons-pair-selector';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
@@ -232,9 +253,43 @@
         else if (select.options.length > 0) select.selectedIndex = 0;
       };
 
+      const restoreStatusIcon = (element, iconSrc, normalizeText) => {
+        if (!element) return;
+        const currentText = normalizeText(element.textContent || '');
+        const image = document.createElement('img');
+        image.src = iconSrc;
+        image.alt = '';
+        image.className = 'status-icon-image';
+        const text = document.createElement('span');
+        text.className = 'status-text';
+        text.textContent = currentText;
+        element.replaceChildren(image, text);
+      };
+
+      const restoreStatusIcons = () => {
+        restoreStatusIcon(document.getElementById('videoCount'), 'assets/multi-mode-icon.svg', text => text.replace(/^🎞\s*/, '').trim() || '0');
+        restoreStatusIcon(document.getElementById('selectionCount'), 'assets/pair-mode-icon.svg', text => text.replace(/^▥\s*/, '').trim() || '0 / 4');
+      };
+
+      const observeStatusIcons = () => {
+        const targets = [document.getElementById('videoCount'), document.getElementById('selectionCount')].filter(Boolean);
+        let scheduled = false;
+        const scheduleRestore = () => {
+          if (scheduled) return;
+          scheduled = true;
+          requestAnimationFrame(() => {
+            scheduled = false;
+            restoreStatusIcons();
+          });
+        };
+        targets.forEach(target => new MutationObserver(scheduleRestore).observe(target, { childList: true, characterData: true, subtree: true }));
+        restoreStatusIcons();
+      };
+
       const loadNext = index => {
         if (index >= files.length) {
           configureExportCodec();
+          observeStatusIcons();
           document.documentElement.classList.add('mobile-ui-ready');
           return;
         }
