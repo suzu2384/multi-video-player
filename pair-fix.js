@@ -86,6 +86,7 @@
     .controls-drawer {
       position: relative;
       order: 2 !important;
+      flex: 0 0 auto !important;
       margin-top: 8px;
       border: 1px solid #3b4554;
       border-radius: 8px;
@@ -112,7 +113,19 @@
     .controls-drawer.open .controls-drawer-toggle::after { transform: rotate(180deg); }
     .controls-drawer-content {
       display: none;
+      position: absolute;
+      left: -1px;
+      right: -1px;
+      top: calc(100% + 4px);
+      z-index: 100;
+      max-height: min(62vh, 520px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      border: 1px solid #3b4554;
+      border-radius: 8px;
       background: #14181f;
+      box-shadow: 0 10px 28px rgba(0,0,0,.55);
     }
     .controls-drawer.open .controls-drawer-content { display: block; }
     .controls-drawer-content > .video-controls,
@@ -147,21 +160,6 @@
       position: relative;
       z-index: 80 !important;
       overflow: visible !important;
-    }
-    body.pair-view .controls-drawer.open .controls-drawer-content {
-      position: absolute;
-      left: -1px;
-      right: -1px;
-      top: calc(100% + 4px);
-      z-index: 100;
-      max-height: min(62vh, 520px);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      border: 1px solid #3b4554;
-      border-radius: 8px;
-      background: #14181f;
-      box-shadow: 0 10px 28px rgba(0,0,0,.55);
     }
     body.pair-view .video-grid.pair-mode { overflow: visible !important; }
     body.pair-view main { overflow: auto !important; }
