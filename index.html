@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-move-vertical-icon-d2c6be9';
+      const BUILD_KEY = '20260627-reset-icon-5cd4334';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -79,6 +79,13 @@
       pointer-events: none;
     }
 
+    .icon-button .button-icon-image {
+      display: block;
+      width: 18px;
+      height: 18px;
+      pointer-events: none;
+    }
+
     .icon-field .field-icon-image {
       display: block;
       width: 22px;
@@ -144,7 +151,7 @@
         <span aria-hidden="true">↕</span><span class="sr-only">縦幅（px）</span>
         <input id="pairHeight" type="number" min="180" max="2160" step="10" value="720" aria-label="動画領域の縦幅（px）" />
       </label>
-      <button id="resetPairSize" class="icon-button" type="button" title="並列表示サイズを初期値に戻す" aria-label="並列表示サイズを初期値に戻す">↺</button>
+      <button id="resetPairSize" class="icon-button" type="button" title="並列表示サイズを初期値に戻す" aria-label="並列表示サイズを初期値に戻す"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button>
       <button id="exportPair" type="button" class="icon-button" title="並列動画を書き出す" aria-label="並列動画を書き出す">⬇</button>
       <label class="icon-field export-option" title="書き出しコーデック">
         <span aria-hidden="true">🎞</span><span class="sr-only">書き出しコーデック</span>
@@ -236,9 +243,9 @@
         </div>
         <div class="crop-controls">
           <span class="section-icon" title="並列表示の切り抜き" aria-label="並列表示の切り抜き">✂</span>
-          <label class="icon-field" title="拡大率"><img src="assets/zoom-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">拡大率</span><input class="crop-zoom" type="range" min="0.25" max="3" step="0.01" value="1" aria-label="拡大率" /><output>1.00×</output><button class="reset-zoom icon-button mini-reset" type="button" title="拡大率をリセット" aria-label="拡大率をリセット">↺</button></label>
-          <label class="icon-field" title="横方向の表示位置"><img src="assets/move-horizontal-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">横方向の表示位置</span><input class="crop-x" type="range" min="0" max="100" step="1" value="50" aria-label="横方向の表示位置" /><output>50%</output><button class="reset-x icon-button mini-reset" type="button" title="横位置をリセット" aria-label="横位置をリセット">↺</button></label>
-          <label class="icon-field" title="縦方向の表示位置"><img src="assets/move-vertical-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">縦方向の表示位置</span><input class="crop-y" type="range" min="0" max="100" step="1" value="50" aria-label="縦方向の表示位置" /><output>50%</output><button class="reset-y icon-button mini-reset" type="button" title="縦位置をリセット" aria-label="縦位置をリセット">↺</button></label>
+          <label class="icon-field" title="拡大率"><img src="assets/zoom-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">拡大率</span><input class="crop-zoom" type="range" min="0.25" max="3" step="0.01" value="1" aria-label="拡大率" /><output>1.00×</output><button class="reset-zoom icon-button mini-reset" type="button" title="拡大率をリセット" aria-label="拡大率をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
+          <label class="icon-field" title="横方向の表示位置"><img src="assets/move-horizontal-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">横方向の表示位置</span><input class="crop-x" type="range" min="0" max="100" step="1" value="50" aria-label="横方向の表示位置" /><output>50%</output><button class="reset-x icon-button mini-reset" type="button" title="横位置をリセット" aria-label="横位置をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
+          <label class="icon-field" title="縦方向の表示位置"><img src="assets/move-vertical-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">縦方向の表示位置</span><input class="crop-y" type="range" min="0" max="100" step="1" value="50" aria-label="縦方向の表示位置" /><output>50%</output><button class="reset-y icon-button mini-reset" type="button" title="縦位置をリセット" aria-label="縦位置をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
         </div>
         <div class="time-row">
           <span class="current-time">00:00.0</span>
@@ -251,7 +258,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-move-vertical-icon-d2c6be9';
+      const BUILD_KEY = '20260627-reset-icon-5cd4334';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
