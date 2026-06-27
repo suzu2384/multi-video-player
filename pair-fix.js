@@ -8,7 +8,20 @@
   const style = document.createElement('style');
   style.textContent = `
     #videoGrid.pair-mode .pair-move-controls {
-      display: none !important;
+      display: grid !important;
+      z-index: 140 !important;
+      pointer-events: auto !important;
+    }
+    #videoGrid.pair-mode .pair-move {
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    #videoGrid.pair-mode .pair-move-icon-image {
+      display: block !important;
+      width: 18px !important;
+      height: 18px !important;
+      pointer-events: none !important;
     }
 
     .pair-settings {
@@ -51,6 +64,7 @@
 
     .controls-drawer {
       position: relative;
+      order: 2 !important;
       margin-top: 8px;
       border: 1px solid #3b4554;
       border-radius: 8px;
@@ -89,6 +103,22 @@
       border-top: 1px solid #303641 !important;
     }
     .video-grid .crop-controls .section-icon { display: none !important; }
+
+    body.pair-view .video-grid.pair-mode .video-info {
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    body.pair-view .video-grid.pair-mode .title-row {
+      order: 0 !important;
+    }
+    body.pair-view .video-grid.pair-mode .time-row {
+      order: 1 !important;
+      margin-top: 8px !important;
+    }
+    body.pair-view .video-grid.pair-mode .video-controls,
+    body.pair-view .video-grid.pair-mode .crop-controls {
+      order: 3 !important;
+    }
 
     body.pair-view .video-card.drawer-open,
     body.pair-view .video-card.drawer-open .video-info,
@@ -138,21 +168,10 @@
       align-items: center !important;
       width: 100% !important;
     }
-
-    .pair-swap-button img {
-      display: block;
-      width: 22px;
-      height: 22px;
-      pointer-events: none;
-    }
   `;
   document.head.appendChild(style);
 
-  const POSITION_CLASSES = ['pair-top-left','pair-top-right','pair-bottom-left','pair-bottom-right'];
-  let knownCards = [];
-  let slots = [];
   let scheduled = false;
-  let swapLayer = null;
   let columnsManuallySet = false;
 
   const ensurePairSettingsPlacement = () => {
@@ -292,144 +311,12 @@
     });
   };
 
-  const getSelectedCards = () => [...grid.querySelectorAll('.video-card.pair-selected:not(.hidden-in-pair)')];
-  const hasSameCards = cards => cards.length === knownCards.length && cards.every(card => knownCards.includes(card));
-
-  const initializeSlots = cards => {
-    knownCards = cards;
-    if (cards.length === 2) {
-      const left = cards.find(card => card.classList.contains('pair-left')) || cards[0];
-      slots = [left, cards.find(card => card !== left) || null];
-      return;
-    }
-    slots = new Array(4).fill(null);
-    cards.forEach(card => {
-      const index = POSITION_CLASSES.findIndex(name => card.classList.contains(name));
-      if (index >= 0 && !slots[index]) slots[index] = card;
-    });
-    cards.forEach(card => {
-      if (slots.includes(card)) return;
-      const index = slots.indexOf(null);
-      if (index >= 0) slots[index] = card;
-    });
-  };
-
-  const applySlotClasses = cards => {
-    cards.forEach(card => {
-      card.classList.remove('pair-left','pair-right',...POSITION_CLASSES);
-      card.style.removeProperty('grid-column');
-      card.style.removeProperty('grid-row');
-      card.style.removeProperty('order');
-    });
-    if (cards.length === 2) {
-      slots[0]?.classList.add('pair-left');
-      slots[1]?.classList.add('pair-right');
-      return;
-    }
-    slots.forEach((card,index) => {
-      if (!card) return;
-      card.classList.add(POSITION_CLASSES[index]);
-      card.style.gridColumn = String((index % 2) + 1);
-      card.style.gridRow = String(Math.floor(index / 2) + 1);
-      card.style.order = String(index);
-    });
-  };
-
-  const getSwapLayer = () => {
-    if (swapLayer?.isConnected) return swapLayer;
-    swapLayer = document.createElement('div');
-    Object.assign(swapLayer.style,{position:'absolute',inset:'0',zIndex:'120',pointerEvents:'none'});
-    grid.appendChild(swapLayer);
-    return swapLayer;
-  };
-
-  const getMoveDirection = (from, to) => {
-    if (to === from + 1) return 'right';
-    if (to === from - 1) return 'left';
-    if (to === from + 2) return 'down';
-    if (to === from - 2) return 'up';
-    return null;
-  };
-
-  const triggerNativeMove = (source, direction) => {
-    const nativeButton = direction ? source.querySelector(`.pair-move[data-direction="${direction}"]`) : null;
-    if (!nativeButton) return false;
-    const wasDisabled = nativeButton.disabled;
-    nativeButton.disabled = false;
-    nativeButton.click();
-    nativeButton.disabled = wasDisabled;
-    return true;
-  };
-
-  const refreshVisualSlots = (from, to) => {
-    [slots[from], slots[to]] = [slots[to], slots[from]];
-    applySlotClasses(getSelectedCards());
-    renderSwaps();
-  };
-
-  const addSwap = (from,to,symbol,left,top) => {
-    const source = slots[from];
-    const target = slots[to];
-    if (!source || !target) return;
-
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'pair-swap-button';
-    button.title = symbol === 'horizontal' ? '左右の動画を入れ替える' : '上下の動画を入れ替える';
-    button.setAttribute('aria-label', button.title);
-    if (symbol === 'horizontal') {
-      const image = document.createElement('img');
-      image.src = 'assets/swap-horizontal-icon.svg';
-      image.alt = '';
-      button.appendChild(image);
-    } else {
-      button.textContent = '⇅';
-    }
-    Object.assign(button.style,{position:'absolute',left:`${left}%`,top:`${top}%`,transform:'translate(-50%,-50%)',width:'38px',height:'38px',padding:'0',border:'1px solid #6b7788',borderRadius:'50%',background:'rgba(24,28,35,.94)',color:'#fff',fontSize:'20px',lineHeight:'1',boxShadow:'0 2px 10px rgba(0,0,0,.45)',pointerEvents:'auto',display:'inline-flex',alignItems:'center',justifyContent:'center'});
-    button.addEventListener('click',event => {
-      event.preventDefault();
-      event.stopPropagation();
-      const moved = triggerNativeMove(source, getMoveDirection(from, to));
-      refreshVisualSlots(from, to);
-      if (!moved) return;
-      knownCards = [];
-      slots = [];
-      schedule();
-    });
-    getSwapLayer().appendChild(button);
-  };
-
-  function renderSwaps() {
-    const layer = getSwapLayer();
-    layer.replaceChildren();
-    if (!grid.classList.contains('pair-mode')) { layer.style.display = 'none'; return; }
-    layer.style.display = 'block';
-    if (knownCards.length === 2) { addSwap(0,1,'horizontal',50,50); return; }
-    if (knownCards.length >= 3) {
-      addSwap(0,1,'horizontal',50,25);
-      addSwap(2,3,'horizontal',50,75);
-      addSwap(0,2,'vertical',25,50);
-      addSwap(1,3,'vertical',75,50);
-    }
-  }
-
   const refresh = () => {
     scheduled = false;
     ensurePairSettingsLayout();
     ensurePairSettingsPlacement();
     ensureDrawersAndSeek();
-    grid.style.position = 'relative';
     if (grid.classList.contains('multi-mode')) forceAutomaticColumns();
-    const cards = getSelectedCards();
-    if (!hasSameCards(cards)) initializeSlots(cards);
-    if (cards.length < 2) {
-      knownCards = cards;
-      slots = [];
-      if (swapLayer) swapLayer.style.display = 'none';
-      return;
-    }
-    applySlotClasses(cards);
-    renderSwaps();
   };
 
   const schedule = () => {
@@ -450,7 +337,7 @@
 
   columnCount?.addEventListener('input', () => { columnsManuallySet = true; });
   columnCount?.addEventListener('change', () => { columnsManuallySet = true; });
-  new MutationObserver(schedule).observe(grid,{childList:true,subtree:true,attributes:true,attributeFilter:['class','disabled']});
+  new MutationObserver(schedule).observe(grid,{ childList:true, subtree:false, attributes:true, attributeFilter:['class'] });
   window.addEventListener('resize',schedule);
   window.addEventListener('orientationchange',schedule);
   fileInput?.addEventListener('change',() => [0,150,500].forEach(delay => setTimeout(forceAutomaticColumns,delay)));
