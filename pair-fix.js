@@ -2,12 +2,48 @@
   const grid = document.getElementById('videoGrid');
   const columnCount = document.getElementById('columnCount');
   const fileInput = document.getElementById('fileInput');
+  const pairSettings = document.getElementById('pairSettings');
   if (!grid) return;
 
   const style = document.createElement('style');
   style.textContent = `
     #videoGrid.pair-mode .pair-move-controls {
       display: none !important;
+    }
+
+    .pair-settings .pair-settings-group {
+      display: inline-flex !important;
+      align-items: center !important;
+      flex-wrap: wrap !important;
+      gap: 10px 14px !important;
+    }
+    .pair-settings .pair-size-group {
+      flex: 0 1 auto !important;
+    }
+    .pair-settings .pair-export-group {
+      flex: 1 1 auto !important;
+      justify-content: flex-end !important;
+      margin-left: auto !important;
+    }
+    .pair-settings .pair-settings-separator {
+      display: inline-block !important;
+      width: 1px !important;
+      height: 32px !important;
+      flex: 0 0 auto !important;
+      background: #3b4554 !important;
+    }
+    .pair-settings .export-progress {
+      flex-basis: 100% !important;
+    }
+    @media (max-width: 760px) {
+      .pair-settings .pair-export-group {
+        justify-content: flex-start !important;
+        margin-left: 0 !important;
+      }
+      .pair-settings .pair-settings-separator {
+        width: 100% !important;
+        height: 1px !important;
+      }
     }
 
     .controls-drawer {
@@ -115,6 +151,42 @@
   let scheduled = false;
   let swapLayer = null;
   let columnsManuallySet = false;
+
+  const ensurePairSettingsLayout = () => {
+    if (!pairSettings || pairSettings.dataset.grouped === 'true') return;
+    const sizeIcon = pairSettings.querySelector(':scope > .section-icon');
+    const pairWidthInput = document.getElementById('pairWidth');
+    const pairHeightInput = document.getElementById('pairHeight');
+    const resetPairSize = document.getElementById('resetPairSize');
+    const exportCodec = document.getElementById('exportCodec');
+    const exportBitrate = document.getElementById('exportBitrate');
+    const exportPair = document.getElementById('exportPair');
+    const exportProgress = document.getElementById('exportProgress');
+    const widthLabel = pairWidthInput?.closest('label');
+    const heightLabel = pairHeightInput?.closest('label');
+    const codecLabel = exportCodec?.closest('label');
+    const bitrateLabel = exportBitrate?.closest('label');
+    if (!sizeIcon || !widthLabel || !heightLabel || !resetPairSize || !codecLabel || !bitrateLabel || !exportPair) return;
+
+    const sizeGroup = document.createElement('div');
+    sizeGroup.className = 'pair-settings-group pair-size-group';
+    sizeGroup.setAttribute('aria-label', '並列動画の表示サイズ設定');
+    sizeGroup.append(sizeIcon, widthLabel, heightLabel, resetPairSize);
+
+    const separator = document.createElement('span');
+    separator.className = 'pair-settings-separator';
+    separator.setAttribute('aria-hidden', 'true');
+
+    const exportGroup = document.createElement('div');
+    exportGroup.className = 'pair-settings-group pair-export-group';
+    exportGroup.setAttribute('aria-label', '並列動画の書き出し設定');
+    exportGroup.append(codecLabel, bitrateLabel, exportPair);
+
+    pairSettings.insertBefore(sizeGroup, exportProgress || null);
+    pairSettings.insertBefore(separator, exportProgress || null);
+    pairSettings.insertBefore(exportGroup, exportProgress || null);
+    pairSettings.dataset.grouped = 'true';
+  };
 
   const isTouchDevice = () => navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
   const isMobileLayout = () => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent || '')
@@ -321,6 +393,7 @@
 
   const refresh = () => {
     scheduled = false;
+    ensurePairSettingsLayout();
     ensureDrawersAndSeek();
     grid.style.position = 'relative';
     if (grid.classList.contains('multi-mode')) forceAutomaticColumns();
@@ -358,6 +431,7 @@
   window.addEventListener('resize',schedule);
   window.addEventListener('orientationchange',schedule);
   fileInput?.addEventListener('change',() => [0,150,500].forEach(delay => setTimeout(forceAutomaticColumns,delay)));
+  ensurePairSettingsLayout();
   schedule();
   showVersion();
 })();
