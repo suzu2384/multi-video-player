@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-reset-icon-5cd4334';
+      const BUILD_KEY = '20260627-crop-edit-values';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -54,7 +54,7 @@
 
       html:not(.mobile-boot) .video-grid.pair-mode .controls-drawer-content .crop-controls .icon-field {
         display: grid !important;
-        grid-template-columns: 30px minmax(0, 1fr) 48px 28px !important;
+        grid-template-columns: 30px minmax(0, 1fr) 72px 34px !important;
         align-items: center !important;
         width: 100% !important;
       }
@@ -134,6 +134,27 @@
 
     .video-info .crop-controls {
       order: 3;
+    }
+
+    .crop-controls .icon-field {
+      display: grid !important;
+      grid-template-columns: 30px minmax(0, 1fr) 72px 34px !important;
+      align-items: center !important;
+      width: 100% !important;
+    }
+
+    .crop-controls .crop-value-input {
+      width: 68px;
+      min-width: 0;
+      box-sizing: border-box;
+      text-align: right;
+    }
+
+    .crop-controls .mini-reset {
+      justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
     }
   </style>
 </head>
@@ -243,9 +264,9 @@
         </div>
         <div class="crop-controls">
           <span class="section-icon" title="並列表示の切り抜き" aria-label="並列表示の切り抜き">✂</span>
-          <label class="icon-field" title="拡大率"><img src="assets/zoom-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">拡大率</span><input class="crop-zoom" type="range" min="0.25" max="3" step="0.01" value="1" aria-label="拡大率" /><output>1.00×</output><button class="reset-zoom icon-button mini-reset" type="button" title="拡大率をリセット" aria-label="拡大率をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
-          <label class="icon-field" title="横方向の表示位置"><img src="assets/move-horizontal-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">横方向の表示位置</span><input class="crop-x" type="range" min="0" max="100" step="1" value="50" aria-label="横方向の表示位置" /><output>50%</output><button class="reset-x icon-button mini-reset" type="button" title="横位置をリセット" aria-label="横位置をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
-          <label class="icon-field" title="縦方向の表示位置"><img src="assets/move-vertical-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">縦方向の表示位置</span><input class="crop-y" type="range" min="0" max="100" step="1" value="50" aria-label="縦方向の表示位置" /><output>50%</output><button class="reset-y icon-button mini-reset" type="button" title="縦位置をリセット" aria-label="縦位置をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
+          <label class="icon-field" title="拡大率"><img src="assets/zoom-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">拡大率</span><input class="crop-zoom" type="range" min="0.25" max="3" step="0.01" value="1" aria-label="拡大率" /><input class="crop-value-input crop-zoom-value" type="number" min="0.25" max="3" step="0.01" value="1" aria-label="拡大率の数値" oninput="this.previousElementSibling.value=this.value;this.previousElementSibling.dispatchEvent(new Event('input',{bubbles:true}))" /><button class="reset-zoom icon-button mini-reset" type="button" title="拡大率をリセット" aria-label="拡大率をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
+          <label class="icon-field" title="横方向の表示位置"><img src="assets/move-horizontal-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">横方向の表示位置</span><input class="crop-x" type="range" min="0" max="100" step="1" value="50" aria-label="横方向の表示位置" /><input class="crop-value-input crop-x-value" type="number" min="0" max="100" step="1" value="50" aria-label="横方向の表示位置の数値" oninput="this.previousElementSibling.value=this.value;this.previousElementSibling.dispatchEvent(new Event('input',{bubbles:true}))" /><button class="reset-x icon-button mini-reset" type="button" title="横位置をリセット" aria-label="横位置をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
+          <label class="icon-field" title="縦方向の表示位置"><img src="assets/move-vertical-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">縦方向の表示位置</span><input class="crop-y" type="range" min="0" max="100" step="1" value="50" aria-label="縦方向の表示位置" /><input class="crop-value-input crop-y-value" type="number" min="0" max="100" step="1" value="50" aria-label="縦方向の表示位置の数値" oninput="this.previousElementSibling.value=this.value;this.previousElementSibling.dispatchEvent(new Event('input',{bubbles:true}))" /><button class="reset-y icon-button mini-reset" type="button" title="縦位置をリセット" aria-label="縦位置をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
         </div>
         <div class="time-row">
           <span class="current-time">00:00.0</span>
@@ -258,7 +279,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-reset-icon-5cd4334';
+      const BUILD_KEY = '20260627-crop-edit-values';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
