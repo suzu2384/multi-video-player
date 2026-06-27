@@ -263,25 +263,27 @@
   const getSwapLayer = () => {
     if (swapLayer?.isConnected) return swapLayer;
     swapLayer = document.createElement('div');
-    Object.assign(swapLayer.style,{position:'absolute',inset:'0',zIndex:'30',pointerEvents:'none'});
+    Object.assign(swapLayer.style,{position:'absolute',inset:'0',zIndex:'120',pointerEvents:'none'});
     grid.appendChild(swapLayer);
     return swapLayer;
   };
 
-  const rebuildSelectionOrder = orderedCards => {
-    const selectedCards = getSelectedCards();
-    selectedCards.forEach(card => {
-      const checkbox = card.querySelector('.pair-checkbox');
-      if (!checkbox) return;
-      checkbox.checked = false;
-      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-    });
-    orderedCards.forEach(card => {
-      const checkbox = card.querySelector('.pair-checkbox');
-      if (!checkbox) return;
-      checkbox.checked = true;
-      checkbox.dispatchEvent(new Event('change', { bubbles: true }));
-    });
+  const getMoveDirection = (from, to) => {
+    if (to === from + 1) return 'right';
+    if (to === from - 1) return 'left';
+    if (to === from + 2) return 'down';
+    if (to === from - 2) return 'up';
+    return null;
+  };
+
+  const triggerNativeMove = (source, direction) => {
+    const nativeButton = direction ? source.querySelector(`.pair-move[data-direction="${direction}"]`) : null;
+    if (!nativeButton) return false;
+    const wasDisabled = nativeButton.disabled;
+    nativeButton.disabled = false;
+    nativeButton.click();
+    nativeButton.disabled = wasDisabled;
+    return true;
   };
 
   const addSwap = (from,to,symbol,left,top) => {
@@ -296,12 +298,10 @@
     button.addEventListener('click',event => {
       event.preventDefault();
       event.stopPropagation();
-
-      const nextOrder = slots.filter(Boolean);
-      [nextOrder[from], nextOrder[to]] = [nextOrder[to], nextOrder[from]];
+      const moved = triggerNativeMove(source, getMoveDirection(from, to));
+      if (!moved) return;
       knownCards = [];
       slots = [];
-      rebuildSelectionOrder(nextOrder);
       schedule();
     });
     getSwapLayer().appendChild(button);
