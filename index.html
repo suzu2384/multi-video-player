@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-fix-seek-order-pair-swap';
+      const BUILD_KEY = '20260627-export-codec-options';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -302,7 +302,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-fix-seek-order-pair-swap';
+      const BUILD_KEY = '20260627-export-codec-options';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
@@ -311,9 +311,27 @@
         const select = document.getElementById('exportCodec');
         if (!select) return;
 
-        [...select.options]
-          .filter(option => option.value === '' || option.textContent.trim() === '自動')
-          .forEach(option => option.remove());
+        const isAutoOption = option => option.value === '' || option.textContent.trim() === '自動';
+        const explicitOptions = [...select.options].filter(option => !isAutoOption(option));
+        if (explicitOptions.length === 0) {
+          [
+            ['video/mp4;codecs=avc1.42E01E,mp4a.40.2', 'H.264 + AAC (MP4)'],
+            ['video/mp4;codecs=avc1.42E01E', 'H.264 (MP4)'],
+            ['video/mp4', 'MP4（ブラウザ既定）']
+          ].forEach(([value, label]) => {
+            const option = document.createElement('option');
+            option.value = value;
+            option.textContent = label;
+            select.appendChild(option);
+          });
+        }
+
+        const hasExplicitOptions = [...select.options].some(option => !isAutoOption(option));
+        if (hasExplicitOptions) {
+          [...select.options]
+            .filter(isAutoOption)
+            .forEach(option => option.remove());
+        }
 
         const preferredValues = [
           'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
