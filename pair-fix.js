@@ -113,15 +113,17 @@
     .controls-drawer.open .controls-drawer-toggle::after { transform: rotate(180deg); }
     .controls-drawer-content {
       display: none;
-      position: absolute;
-      left: -1px;
-      right: -1px;
-      top: calc(100% + 4px);
-      z-index: 100;
+      position: fixed;
+      left: 8px;
+      top: 8px;
+      width: 320px;
+      right: auto;
+      z-index: 10000;
       max-height: min(62vh, 520px);
       overflow-y: auto;
       overscroll-behavior: contain;
       -webkit-overflow-scrolling: touch;
+      box-sizing: border-box;
       border: 1px solid #3b4554;
       border-radius: 8px;
       background: #14181f;
@@ -273,6 +275,32 @@
     grid.style.setProperty('--multi-columns', String(desired));
   };
 
+  const updateDrawerPanelPosition = drawer => {
+    const content = drawer?.querySelector(':scope > .controls-drawer-content');
+    if (!drawer || !content || !drawer.classList.contains('open')) return;
+    const rect = drawer.getBoundingClientRect();
+    const margin = 8;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+    const width = Math.max(240, Math.min(Math.round(rect.width), viewportWidth - margin * 2));
+    const left = Math.max(margin, Math.min(Math.round(rect.left), viewportWidth - width - margin));
+    const below = Math.max(0, viewportHeight - rect.bottom - margin - 4);
+    const above = Math.max(0, rect.top - margin - 4);
+    const openBelow = below >= 220 || below >= above;
+    const availableHeight = openBelow ? below : above;
+    const maxHeight = Math.max(160, Math.min(520, Math.floor(viewportHeight * 0.62), Math.floor(availableHeight)));
+    const top = openBelow ? Math.round(rect.bottom + 4) : Math.max(margin, Math.round(rect.top - maxHeight - 4));
+
+    content.style.left = `${left}px`;
+    content.style.top = `${top}px`;
+    content.style.width = `${width}px`;
+    content.style.maxHeight = `${maxHeight}px`;
+  };
+
+  const updateOpenDrawers = () => {
+    grid.querySelectorAll('.controls-drawer.open').forEach(updateDrawerPanelPosition);
+  };
+
   const createDrawer = (card) => {
     const drawer = document.createElement('div');
     drawer.className = 'controls-drawer';
@@ -289,7 +317,7 @@
       const open = drawer.classList.toggle('open');
       card.classList.toggle('drawer-open', open);
       toggle.setAttribute('aria-expanded', String(open));
-      if (open) drawer.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      if (open) requestAnimationFrame(() => updateDrawerPanelPosition(drawer));
     });
     drawer.append(toggle, content);
     return drawer;
@@ -404,6 +432,7 @@
     ensurePairSettingsPlacement();
     ensureDrawersAndSeek();
     renderCenterSwapButtons();
+    updateOpenDrawers();
     if (grid.classList.contains('multi-mode')) forceAutomaticColumns();
   };
 
@@ -426,8 +455,9 @@
   columnCount?.addEventListener('input', () => { columnsManuallySet = true; });
   columnCount?.addEventListener('change', () => { columnsManuallySet = true; });
   new MutationObserver(schedule).observe(grid,{ childList:true, subtree:false, attributes:true, attributeFilter:['class'] });
-  window.addEventListener('resize',schedule);
-  window.addEventListener('orientationchange',schedule);
+  window.addEventListener('resize', () => { schedule(); updateOpenDrawers(); });
+  window.addEventListener('orientationchange', () => { schedule(); updateOpenDrawers(); });
+  window.addEventListener('scroll', updateOpenDrawers, true);
   fileInput?.addEventListener('change',() => [0,150,500].forEach(delay => setTimeout(forceAutomaticColumns,delay)));
   ensurePairSettingsLayout();
   ensurePairSettingsPlacement();
