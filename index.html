@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-stat-icons-pair-selector';
+      const BUILD_KEY = '20260627-video-count-icon-d076daa';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -171,7 +171,7 @@
 
     <section id="videoGrid" class="video-grid multi-mode" aria-live="polite"></section>
     <div id="multiStats" class="multi-stats" aria-label="複数動画モードの状態">
-      <span id="videoCount" class="icon-status" title="追加されている動画数" aria-label="追加されている動画数"><img src="assets/multi-mode-icon.svg" alt="" class="status-icon-image" /><span class="status-text">0</span></span>
+      <span id="videoCount" class="icon-status" title="追加されている動画数" aria-label="追加されている動画数"><img src="assets/video-count-icon.svg" alt="" class="status-icon-image" /><span class="status-text">0</span></span>
       <span id="selectionCount" class="icon-status" title="並列動画の選択数" aria-label="並列動画の選択数"><img src="assets/pair-mode-icon.svg" alt="" class="status-icon-image" /><span class="status-text">0 / 4</span></span>
       <label class="icon-field" title="複数動画モードの列数">
         <img src="assets/multi-mode-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">列数</span>
@@ -230,7 +230,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-stat-icons-pair-selector';
+      const BUILD_KEY = '20260627-video-count-icon-d076daa';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
@@ -267,7 +267,7 @@
       };
 
       const restoreStatusIcons = () => {
-        restoreStatusIcon(document.getElementById('videoCount'), 'assets/multi-mode-icon.svg', text => text.replace(/^🎞\s*/, '').trim() || '0');
+        restoreStatusIcon(document.getElementById('videoCount'), 'assets/video-count-icon.svg', text => text.replace(/^🎞\s*/, '').trim() || '0');
         restoreStatusIcon(document.getElementById('selectionCount'), 'assets/pair-mode-icon.svg', text => text.replace(/^▥\s*/, '').trim() || '0 / 4');
       };
 
