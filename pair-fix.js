@@ -11,6 +11,9 @@
       display: none !important;
     }
 
+    .pair-settings {
+      margin: 12px auto 14px !important;
+    }
     .pair-settings .pair-settings-group {
       display: inline-flex !important;
       align-items: center !important;
@@ -152,8 +155,27 @@
   let swapLayer = null;
   let columnsManuallySet = false;
 
+  const ensurePairSettingsPlacement = () => {
+    if (!pairSettings || !grid.parentElement) return;
+    if (grid.nextElementSibling !== pairSettings) {
+      grid.parentElement.insertBefore(pairSettings, grid.nextSibling);
+    }
+    if (grid.classList.contains('pair-mode')) {
+      const width = Math.round(grid.getBoundingClientRect().width);
+      if (width > 0) {
+        pairSettings.style.width = `${width}px`;
+        pairSettings.style.maxWidth = '100%';
+      }
+    } else {
+      pairSettings.style.removeProperty('width');
+      pairSettings.style.removeProperty('max-width');
+    }
+  };
+
   const ensurePairSettingsLayout = () => {
-    if (!pairSettings || pairSettings.dataset.grouped === 'true') return;
+    if (!pairSettings) return;
+    ensurePairSettingsPlacement();
+    if (pairSettings.dataset.grouped === 'true') return;
     const sizeIcon = pairSettings.querySelector(':scope > .section-icon');
     const pairWidthInput = document.getElementById('pairWidth');
     const pairHeightInput = document.getElementById('pairHeight');
@@ -394,6 +416,7 @@
   const refresh = () => {
     scheduled = false;
     ensurePairSettingsLayout();
+    ensurePairSettingsPlacement();
     ensureDrawersAndSeek();
     grid.style.position = 'relative';
     if (grid.classList.contains('multi-mode')) forceAutomaticColumns();
@@ -432,6 +455,7 @@
   window.addEventListener('orientationchange',schedule);
   fileInput?.addEventListener('change',() => [0,150,500].forEach(delay => setTimeout(forceAutomaticColumns,delay)));
   ensurePairSettingsLayout();
+  ensurePairSettingsPlacement();
   schedule();
   showVersion();
 })();
