@@ -6,6 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
+      const BUILD_KEY = '20260627-pair-swap-f9e6690';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -13,7 +14,7 @@
       if (mobile) document.documentElement.classList.add('mobile-boot');
 
       const params = new URLSearchParams(location.search);
-      const cacheKey = params.get('dev') || 'release';
+      const cacheKey = params.get('dev') || BUILD_KEY;
       const stylesheet = document.createElement('link');
       stylesheet.rel = 'stylesheet';
       stylesheet.href = `styles.css?v=${encodeURIComponent(cacheKey)}`;
@@ -57,61 +58,10 @@
         align-items: center !important;
         width: 100% !important;
       }
-
-      html:not(.mobile-boot) .video-grid.pair-mode .pair-move-controls {
-        position: absolute !important;
-        top: 12px !important;
-        right: 12px !important;
-        left: auto !important;
-        z-index: 40 !important;
-        display: grid !important;
-        grid-template-columns: repeat(3, 32px) !important;
-        grid-template-rows: repeat(3, 32px) !important;
-        gap: 2px !important;
-        pointer-events: auto !important;
-      }
-
-      html:not(.mobile-boot) .video-grid.pair-mode .pair-move {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        width: 32px !important;
-        height: 32px !important;
-        padding: 0 !important;
-        border: 1px solid #6b7788 !important;
-        border-radius: 7px !important;
-        background: rgba(24,28,35,.94) !important;
-        color: #fff !important;
-        font-size: 17px !important;
-        line-height: 1 !important;
-      }
-
-      html:not(.mobile-boot) .video-grid.pair-mode .pair-move:disabled {
-        opacity: .25 !important;
-        cursor: default !important;
-      }
-
-      html:not(.mobile-boot) .video-grid.pair-mode .move-up { grid-column: 2; grid-row: 1; }
-      html:not(.mobile-boot) .video-grid.pair-mode .move-left { grid-column: 1; grid-row: 2; }
-      html:not(.mobile-boot) .video-grid.pair-mode .move-right { grid-column: 3; grid-row: 2; }
-      html:not(.mobile-boot) .video-grid.pair-mode .move-down { grid-column: 2; grid-row: 3; }
     }
 
     #devRefreshButton {
-      position: fixed;
-      left: 6px;
-      top: 6px;
-      z-index: 10000;
-      width: 34px;
-      height: 34px;
-      padding: 0;
-      border: 1px solid #738096;
-      border-radius: 50%;
-      background: rgba(20,24,31,.9);
-      color: #fff;
-      font-size: 20px;
-      line-height: 1;
-      box-shadow: 0 2px 10px rgba(0,0,0,.35);
+      display: none !important;
     }
   </style>
 </head>
@@ -237,8 +187,9 @@
 
   <script>
     (() => {
+      const BUILD_KEY = '20260627-pair-swap-f9e6690';
       const params = new URLSearchParams(location.search);
-      const cacheKey = params.get('dev') || 'release';
+      const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
 
       const configureExportCodec = () => {
