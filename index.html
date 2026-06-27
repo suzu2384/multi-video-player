@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-pair-mode-icon-2fa5ad0';
+      const BUILD_KEY = '20260627-multi-mode-icon-f7042f7';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -124,7 +124,7 @@
     </section>
 
     <section class="toolbar" aria-label="共通操作">
-      <button id="multiModeButton" class="mode-button icon-button active" type="button" title="複数動画モード" aria-label="複数動画モード">▦</button>
+      <button id="multiModeButton" class="mode-button icon-button active toolbar-icon-button" type="button" title="複数動画モード" aria-label="複数動画モード"><img src="assets/multi-mode-icon.svg" alt="" class="toolbar-icon-image" /></button>
       <button id="pairModeButton" class="mode-button icon-button toolbar-icon-button" type="button" title="並列動画モード" aria-label="並列動画モード"><img src="assets/pair-mode-icon.svg" alt="" class="toolbar-icon-image" /></button>
       <span class="toolbar-separator" aria-hidden="true"></span>
       <button id="playAll" class="icon-button toolbar-icon-button" type="button" title="再生" aria-label="再生"><img src="assets/play-icon.svg" alt="" class="toolbar-icon-image" /></button>
@@ -209,7 +209,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-pair-mode-icon-2fa5ad0';
+      const BUILD_KEY = '20260627-multi-mode-icon-f7042f7';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
