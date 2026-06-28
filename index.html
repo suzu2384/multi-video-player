@@ -6,7 +6,7 @@
   <title>複数動画同期プレーヤー</title>
   <script>
     (() => {
-      const BUILD_KEY = '20260627-viewport-controls-drawer';
+      const BUILD_KEY = '20260627-crop-zoom-cover';
       const userAgent = navigator.userAgent || '';
       const touch = navigator.maxTouchPoints > 0 || 'ontouchstart' in window;
       const mobile = /iPhone|iPad|iPod|Android/i.test(userAgent)
@@ -292,7 +292,7 @@
         </div>
         <div class="crop-controls">
           <span class="section-icon" title="並列表示の切り抜き" aria-label="並列表示の切り抜き">✂</span>
-          <label class="icon-field" title="拡大率"><img src="assets/zoom-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">拡大率</span><input class="crop-zoom" type="range" min="0.25" max="3" step="0.01" value="1" aria-label="拡大率" /><input class="crop-value-input crop-zoom-value" type="number" min="0.25" max="3" step="0.01" value="1" aria-label="拡大率の数値" oninput="this.previousElementSibling.value=this.value;this.previousElementSibling.dispatchEvent(new Event('input',{bubbles:true}))" /><button class="reset-zoom icon-button mini-reset" type="button" title="拡大率をリセット" aria-label="拡大率をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
+          <label class="icon-field" title="拡大率"><img src="assets/zoom-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">拡大率</span><input class="crop-zoom" type="range" min="1" max="3" step="0.01" value="1" aria-label="拡大率" /><input class="crop-value-input crop-zoom-value" type="number" min="1" max="3" step="0.01" value="1" aria-label="拡大率の数値" oninput="this.previousElementSibling.value=this.value;this.previousElementSibling.dispatchEvent(new Event('input',{bubbles:true}))" /><button class="reset-zoom icon-button mini-reset" type="button" title="拡大率をリセット" aria-label="拡大率をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
           <label class="icon-field" title="横方向の表示位置"><img src="assets/move-horizontal-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">横方向の表示位置</span><input class="crop-x" type="range" min="0" max="100" step="1" value="50" aria-label="横方向の表示位置" /><input class="crop-value-input crop-x-value" type="number" min="0" max="100" step="1" value="50" aria-label="横方向の表示位置の数値" oninput="this.previousElementSibling.value=this.value;this.previousElementSibling.dispatchEvent(new Event('input',{bubbles:true}))" /><button class="reset-x icon-button mini-reset" type="button" title="横位置をリセット" aria-label="横位置をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
           <label class="icon-field" title="縦方向の表示位置"><img src="assets/move-vertical-icon.svg" alt="" class="field-icon-image" /><span class="sr-only">縦方向の表示位置</span><input class="crop-y" type="range" min="0" max="100" step="1" value="50" aria-label="縦方向の表示位置" /><input class="crop-value-input crop-y-value" type="number" min="0" max="100" step="1" value="50" aria-label="縦方向の表示位置の数値" oninput="this.previousElementSibling.value=this.value;this.previousElementSibling.dispatchEvent(new Event('input',{bubbles:true}))" /><button class="reset-y icon-button mini-reset" type="button" title="縦位置をリセット" aria-label="縦位置をリセット"><img src="assets/reset-icon.svg" alt="" class="button-icon-image" /></button></label>
         </div>
@@ -302,7 +302,7 @@
 
   <script>
     (() => {
-      const BUILD_KEY = '20260627-viewport-controls-drawer';
+      const BUILD_KEY = '20260627-crop-zoom-cover';
       const params = new URLSearchParams(location.search);
       const cacheKey = params.get('dev') || BUILD_KEY;
       const files = ['app.js', 'mobile-columns.js', 'pair-fix.js'];
@@ -387,8 +387,23 @@
             const range = card.querySelector(rangeSelector);
             const value = card.querySelector(valueSelector);
             if (!range || !value || value.dataset.cropSyncReady === 'true') return;
+            const isZoomControl = rangeSelector === '.crop-zoom';
+            if (isZoomControl) {
+              range.min = '1';
+              value.min = '1';
+              if ((Number(range.value) || 0) < 1) range.value = '1';
+              if ((Number(value.value) || 0) < 1) value.value = '1';
+            }
             const copyFromRange = () => {
-              const numericValue = Number(range.value);
+              const min = Number(range.min);
+              const rawValue = Number(range.value);
+              const numericValue = isZoomControl && Number.isFinite(min)
+                ? Math.max(min, rawValue)
+                : rawValue;
+              if (Number.isFinite(numericValue) && String(numericValue) !== range.value) {
+                range.value = String(numericValue);
+                range.dispatchEvent(new Event('input', { bubbles: true }));
+              }
               value.value = Number.isFinite(numericValue) ? numericValue.toFixed(fixedDigits) : range.value;
             };
             const copyToRange = () => {
